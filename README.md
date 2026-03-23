@@ -1,7 +1,6 @@
-<div style ="display:flex; justify-content:center; width:100%; background-color:red"> 
-  <img src="https://github.com/user-attachments/assets/0c09a5b9-cd2e-41a6-b14b-5bb91b22d7fa" >
-</div>
-## Hi there 👋
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/0c09a5b9-cd2e-41a6-b14b-5bb91b22d7fa">
+</p>
 
 <!--![Uploading dp-spide<svg width="229" height="122" viewBox="0 0 229 122" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect y="9.09203" width="223.924" height="112.883" rx="8" transform="rotate(-2.32703 0 9.09203)" fill="white"/>
