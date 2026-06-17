@@ -5,7 +5,7 @@
 
 - 🌱 I’m currently learning **Langchain, Unsloth**
 
-- 👨‍💻 All of my projects are available at [jayadithya.is-a.dev](jayadithya.is-a.dev)
+- 👨‍💻 All of my projects are available at [jayadithya.is-a.dev](https://jayadithya.is-a.dev)
 
 - 📫 How to reach me **rjayadithya16@gmail.com**
 
