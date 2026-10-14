@@ -1,19 +1,117 @@
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/0c09a5b9-cd2e-41a6-b14b-5bb91b22d7fa">
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/title-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/title-light.svg">
+  <img src="assets/title-light.svg" alt="Hi, I'm Jayadithya - A Curious AI Engineer">
+</picture>
+</div>
+
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/row-learning-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/row-learning-light.svg">
+  <img src="assets/row-learning-light.svg" alt="Currently learning: Rust and Inference Engineering">
+</picture>
+</div>
+
+<div>
+<a href="mailto:rjayadithya11@gmail.com" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/row-email-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/row-email-light.svg">
+    <img src="assets/row-email-light.svg" alt="How to reach me: rjayadithya11@gmail.com">
+  </picture>
+</a>
+</div>
+
+<div>
+<a href="https://jayadithya.is-a.dev" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/row-projects-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/row-projects-light.svg">
+    <img src="assets/row-projects-light.svg" alt="My projects: jayadithya.is-a.dev">
+  </picture>
+</a>
+</div>
+
+<div>
+<a href="https://jayadithya.is-a.dev/resume" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/row-resume-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/row-resume-light.svg">
+    <img src="assets/row-resume-light.svg" alt="My experience: jayadithya.is-a.dev/resume">
+  </picture>
+</a>
+</div>
+
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/h-connect-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/h-connect-light.svg">
+  <img src="assets/h-connect-light.svg" alt="Connect with me">
+</picture>
+</div>
+
+<p>
+<a href="https://github.com/barryallen16" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/btn-github-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/btn-github-light.svg">
+    <img src="assets/btn-github-light.svg" alt="GitHub: barryallen16">
+  </picture>
+</a>
+<a href="https://linkedin.com/in/jayadithya-r" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/btn-linkedin-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/btn-linkedin-light.svg">
+    <img src="assets/btn-linkedin-light.svg" alt="LinkedIn: jayadithya-r">
+  </picture>
+</a>
+<a href="https://leetcode.com/jayadithyx16" target="_blank">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/btn-leetcode-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/btn-leetcode-light.svg">
+    <img src="assets/btn-leetcode-light.svg" alt="LeetCode: jayadithyx16">
+  </picture>
+</a>
 </p>
-<h3 align="center">A Curious AI Engineer</h3>
 
-- 🌱 I’m currently learning **Langchain, Unsloth**
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/h-tools-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/h-tools-light.svg">
+  <img src="assets/h-tools-light.svg" alt="Languages and Tools">
+</picture>
+</div>
 
-- 👨‍💻 All of my projects are available at [jayadithya.is-a.dev](https://jayadithya.is-a.dev)
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/tools-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/tools-light.svg">
+  <img src="assets/tools-light.svg" alt="Languages and tools: AWS, Bash, CSS3, Docker, FastAPI, HTML5, Hugging Face, JavaScript, LangChain, Linux, PostgreSQL, Python, PyTorch, React, Rust, Scikit-learn, Selenium, Tailwind, TypeScript">
+</picture>
+</div>
 
-- 📫 How to reach me **rjayadithya16@gmail.com**
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/top-langs-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/top-langs-light.svg">
+  <img src="assets/top-langs-light.svg" alt="Most used languages">
+</picture>
+</div>
 
-<h3 align="left">Connect with me:</h3>
-<p align="left">
-</p>
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/stats-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/stats-light.svg">
+  <img src="assets/stats-light.svg" alt="GitHub stats">
+</picture>
+</div>
 
-<h3 align="left">Languages and Tools:</h3>
-<p align="left"> <a href="https://www.djangoproject.com/" target="_blank" rel="noreferrer"> <img src="https://cdn.worldvectorlogo.com/logos/django.svg" alt="django" width="40" height="40"/> </a> <a href="https://www.figma.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/figma/figma-icon.svg" alt="figma" width="40" height="40"/> </a> <a href="https://firebase.google.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" alt="firebase" width="40" height="40"/> </a> <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="javascript" width="40" height="40"/> </a> <a href="https://opencv.org/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/opencv/opencv-icon.svg" alt="opencv" width="40" height="40"/> </a> <a href="https://pandas.pydata.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/2ae2a900d2f041da66e950e4d48052658d850630/icons/pandas/pandas-original.svg" alt="pandas" width="40" height="40"/> </a> <a href="https://www.python.org" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg" alt="python" width="40" height="40"/> </a> <a href="https://pytorch.org/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/pytorch/pytorch-icon.svg" alt="pytorch" width="40" height="40"/> </a> <a href="https://reactnative.dev/" target="_blank" rel="noreferrer"> <img src="https://reactnative.dev/img/header_logo.svg" alt="reactnative" width="40" height="40"/> </a> <a href="https://www.selenium.dev" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/detain/svg-logos/780f25886640cef088af994181646db2f6b1a3f8/svg/selenium-logo.svg" alt="selenium" width="40" height="40"/> </a> <a href="https://tailwindcss.com/" target="_blank" rel="noreferrer"> <img src="https://www.vectorlogo.zone/logos/tailwindcss/tailwindcss-icon.svg" alt="tailwind" width="40" height="40"/> </a> <a href="https://www.typescriptlang.org/" target="_blank" rel="noreferrer"> <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" alt="typescript" width="40" height="40"/> </a> </p>
-
-<p><img align="center" src="https://github-readme-stats.vercel.app/api/top-langs?username=barryallen16&show_icons=true&locale=en&layout=compact" alt="barryallen16" /></p>
+<div>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/streak-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/streak-light.svg">
+  <img src="assets/streak-light.svg" alt="Contribution streak">
+</picture>
+</div>
