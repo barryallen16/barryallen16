@@ -19,7 +19,9 @@ const OUT = join(__dirname, "..", "assets");
 const USER = process.env.TARGET_USER || "barryallen16";
 
 const STATS_URL = `https://github-readme-stats.vercel.app/api?username=${encodeURIComponent(USER)}&show_icons=true&locale=en`;
-const LANGS_URL = `https://github-readme-stats.vercel.app/api/top-langs?username=${encodeURIComponent(USER)}&show_icons=true&locale=en&layout=compact`;
+// hide Jupyter Notebook: notebooks embed base64 plot images, and banksim alone
+// carries 130MB of them, which outweighs every other language on the profile.
+const LANGS_URL = `https://github-readme-stats.vercel.app/api/top-langs?username=${encodeURIComponent(USER)}&show_icons=true&locale=en&layout=compact&hide=Jupyter%20Notebook`;
 // The legacy herokuapp host is the one the README widget links, but it is
 // unreliable (it has served 503s and then hung); the maintained demolab host
 // serves the same card byte-for-byte. Both are tried, so one bad host cannot
