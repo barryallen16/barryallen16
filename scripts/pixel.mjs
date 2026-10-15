@@ -5,11 +5,12 @@ import opentype from "opentype.js";
 
 export const P = 2; // default pixel size in output units (matches existing assets)
 
-// Sample cell size for a given cap height. Chunky 2px cells are the house style
-// and fine for headings, but below ~20px of cap height a 2px cell is too coarse
-// to resolve letterforms (the "c" aperture closes, "a" fills in, "k" loses its
-// leg, so "Oct" renders as "Out"): those sizes sample on a 1px grid instead.
-export const pixelSizeFor = (capHeightPx) => (capHeightPx < 20 ? 1 : P);
+// Sample cell size for a given cap height. A 2px cell needs about 24px of cap
+// height to leave 12 grid rows, which is roughly the least an "S" needs before it
+// reads as a "5" and a "G" loses its spur. Below that, sample on a 1px grid: the
+// 2px grid at a 20px cap height gives only 10 rows and renders headings rougher
+// than the 15px body text, which has 15.
+export const pixelSizeFor = (capHeightPx) => (capHeightPx < 24 ? 1 : P);
 
 const CAP_RATIO = 0.72; // Geist cap-height / em (approx)
 
