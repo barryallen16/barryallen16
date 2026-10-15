@@ -92,26 +92,30 @@
 </picture>
 </div>
 
-<div>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/top-langs-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/top-langs-light.svg">
-  <img src="assets/top-langs-light.svg" alt="Most used languages">
-</picture>
-</div>
-
-<div>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/stats-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/stats-light.svg">
-  <img src="assets/stats-light.svg" alt="GitHub stats">
-</picture>
-</div>
-
-<div>
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/streak-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/streak-light.svg">
-  <img src="assets/streak-light.svg" alt="Contribution streak">
-</picture>
-</div>
+<table>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/stats-dark.svg">
+        <source media="(prefers-color-scheme: light)" srcset="assets/stats-light.svg">
+        <img src="assets/stats-light.svg" alt="GitHub stats">
+      </picture>
+    </td>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/top-langs-dark.svg">
+        <source media="(prefers-color-scheme: light)" srcset="assets/top-langs-light.svg">
+        <img src="assets/top-langs-light.svg" alt="Most used languages">
+      </picture>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/streak-dark.svg">
+        <source media="(prefers-color-scheme: light)" srcset="assets/streak-light.svg">
+        <img src="assets/streak-light.svg" alt="Contribution streak">
+      </picture>
+    </td>
+  </tr>
+</table>

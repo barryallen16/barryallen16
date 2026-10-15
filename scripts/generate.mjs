@@ -205,9 +205,18 @@ function frame(width, height, color) {
 // ---------------------------------------------------------------------------
 // Card 1 — GitHub Stats
 // ---------------------------------------------------------------------------
-function statsCard(data, theme) {
+
+// One number drives card width. Type sizes, margins and row heights all scale
+// with it. 430 is a half-width cell of the README's two-column card table, so
+// the cards render 1:1 instead of being rescaled by the browser. CARD_W=460
+// reproduces the original full-width layout.
+const CARD_W = Number(process.env.CARD_W) || 430;
+const S = CARD_W / 460;
+const sc = (n) => Math.round(n * S);
+
+function statsCard(data, theme, minH = 0) {
   const F = fonts();
-  const W = 460;
+  const W = CARD_W;
   const rows = [
     ["Total Stars", data.stars],
     ["Commits (last year)", data.commits],
@@ -216,34 +225,33 @@ function statsCard(data, theme) {
     ["Contributed To", data.contributedTo],
   ];
   if (data.rank) rows.push(["Rank", data.rank]);
-  const rowH = 36;
-  const top = 78;
-  const H = top + rows.length * rowH + 30;
+  const rowH = sc(36);
+  const top = sc(78);
+  const H = Math.max(top + rows.length * rowH + sc(30), minH);
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
   // header icon + title (vertically centered on each other)
-  const t20 = 20;
-  const iconY = 26;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(24, iconY))}"/>`;
-  const title = text("GITHUB STATS", 20, 24 + chartIcon.width + 14, 28, F.medium);
+  const iconY = sc(26);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(sc(24), iconY))}"/>`;
+  const title = text("GITHUB STATS", sc(20), sc(24) + chartIcon.width + sc(14), sc(28), F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(top - 20, W, theme.border);
+  paths += dottedRule(top - sc(20), W, theme.border);
 
   rows.forEach((r, i) => {
     const yTop = top + i * rowH;
-    const lbl = text(r[0], 15, 26, yTop, F.regular);
+    const lbl = text(r[0], sc(15), sc(26), yTop, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(lbl.rects)}"/>`;
     const vStr = String(r[1]);
-    const vCap = 22;
+    const vCap = sc(22);
     // measure first (draw at 0), then place right-aligned
     const probe = text(vStr, vCap, 0, 0, F.medium);
-    const vx = W - 26 - probe.width;
-    const vy = yTop - 4;
+    const vx = W - sc(26) - probe.width;
+    const vy = yTop - sc(4);
     const val = text(vStr, vCap, vx, vy, F.medium);
     paths += `<path fill="${theme.accent}" d="${rectsToPath(val.rects)}"/>`;
   });
 
-  paths += dottedRule(H - 20, W, theme.border);
+  paths += dottedRule(H - sc(20), W, theme.border);
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, `${data.name}'s GitHub stats`)}${paths}</svg>` };
 }
@@ -251,42 +259,42 @@ function statsCard(data, theme) {
 // ---------------------------------------------------------------------------
 // Card 2 — Most Used Languages
 // ---------------------------------------------------------------------------
-function langsCard(langs, theme) {
+function langsCard(langs, theme, minH = 0) {
   const F = fonts();
-  const W = 460;
-  const rowH = 40;
-  const top = 78;
-  const H = top + langs.length * rowH + 30;
+  const W = CARD_W;
+  const rowH = sc(40);
+  const top = sc(78);
+  const H = Math.max(top + langs.length * rowH + sc(30), minH);
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(24, 26))}"/>`;
-  const title = text("MOST USED LANGUAGES", 20, 24 + codeIcon.width + 14, 28, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(sc(24), sc(26)))}"/>`;
+  const title = text("MOST USED LANGUAGES", sc(20), sc(24) + codeIcon.width + sc(14), sc(28), F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(top - 20, W, theme.border);
+  paths += dottedRule(top - sc(20), W, theme.border);
 
-  const barX = 26;
-  const barW = W - 52;
+  const barX = sc(26);
+  const barW = W - sc(52);
   langs.forEach((l, i) => {
     const yTop = top + i * rowH;
     // language color swatch (filled square)
-    paths += `<rect x="${barX}" y="${yTop}" width="14" height="14" fill="${l.color}"/>`;
+    paths += `<rect x="${barX}" y="${yTop}" width="${sc(14)}" height="${sc(14)}" fill="${l.color}"/>`;
     // name
-    const nm = text(l.name, 15, barX + 22, yTop - 1, F.medium);
+    const nm = text(l.name, sc(15), barX + sc(22), yTop - sc(1), F.medium);
     paths += `<path fill="${theme.text}" d="${rectsToPath(nm.rects)}"/>`;
     // percentage right-aligned
     const pctStr = `${l.pct < 1 && l.pct > 0 ? "<1" : Math.round(l.pct)}%`;
-    const probe = text(pctStr, 15, 0, 0, F.regular);
-    const px = W - 26 - probe.width;
-    const pct = text(pctStr, 15, px, yTop - 1, F.regular);
+    const probe = text(pctStr, sc(15), 0, 0, F.regular);
+    const px = W - sc(26) - probe.width;
+    const pct = text(pctStr, sc(15), px, yTop - sc(1), F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(pct.rects)}"/>`;
     // bar track + fill
-    const barY = yTop + 22;
-    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="8" fill="${theme.track}"/>`;
-    const fillW = Math.max(2, Math.round((barW * l.pct) / 100));
-    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="8" fill="${l.color}"/>`;
+    const barY = yTop + sc(22);
+    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="${sc(8)}" fill="${theme.track}"/>`;
+    const fillW = Math.max(sc(2), Math.round((barW * l.pct) / 100));
+    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="${sc(8)}" fill="${l.color}"/>`;
   });
 
-  paths += dottedRule(H - 20, W, theme.border);
+  paths += dottedRule(H - sc(20), W, theme.border);
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, "Most used languages")}${paths}</svg>` };
 }
@@ -296,38 +304,38 @@ function langsCard(langs, theme) {
 // ---------------------------------------------------------------------------
 function streakCard(c, theme) {
   const F = fonts();
-  const W = 460;
-  const H = 220; // header + numbers only, no calendar graph
+  const W = CARD_W;
+  const H = sc(220); // header + numbers only, no calendar graph
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
   // header
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(24, 24))}"/>`;
-  const title = text("CONTRIBUTION STREAK", 20, 24 + flameIcon.width + 14, 26, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(sc(24), sc(24)))}"/>`;
+  const title = text("CONTRIBUTION STREAK", sc(20), sc(24) + flameIcon.width + sc(14), sc(26), F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(70, W, theme.border);
+  paths += dottedRule(sc(70), W, theme.border);
 
   // big current streak number + label
-  const big = text(String(c.curLen), 44, 26, 90, F.medium);
+  const big = text(String(c.curLen), sc(44), sc(26), sc(90), F.medium);
   paths += `<path fill="${theme.accent}" d="${rectsToPath(big.rects)}"/>`;
-  const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", 14,
-    26 + big.width + 12, 96, F.regular);
+  const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", sc(14),
+    sc(26) + big.width + sc(12), sc(96), F.regular);
   paths += `<path fill="${theme.text}" d="${rectsToPath(dayLbl.rects)}"/>`;
-  const range = text(c.curRange, 13, 26 + big.width + 12, 116, F.regular);
+  const range = text(c.curRange, sc(13), sc(26) + big.width + sc(12), sc(116), F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(range.rects)}"/>`;
 
   // longest streak row
-  const l1 = text(`Longest Streak: ${c.bestLen}`, 14, 26, 142, F.regular);
+  const l1 = text(`Longest Streak: ${c.bestLen}`, sc(14), sc(26), sc(142), F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(l1.rects)}"/>`;
   const l1s = c.bestRange;
-  const l1probe = text(l1s, 12, 0, 0, F.regular);
-  const l1x = W - 26 - l1probe.width;
-  const l1range = text(l1s, 12, l1x, 145, F.regular);
+  const l1probe = text(l1s, sc(12), 0, 0, F.regular);
+  const l1x = W - sc(26) - l1probe.width;
+  const l1range = text(l1s, sc(12), l1x, sc(145), F.regular);
   paths += `<path fill="${theme.border}" d="${rectsToPath(l1range.rects)}"/>`;
 
   // totals row — the streak service exposes no daily calendar, and this card
   // deliberately draws no contribution graph
-  paths += dottedRule(172, W, theme.border);
-  const tot = text(`Total Contributions: ${c.total}`, 14, 26, 188, F.regular);
+  paths += dottedRule(sc(172), W, theme.border);
+  const tot = text(`Total Contributions: ${c.total}`, sc(14), sc(26), sc(188), F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(tot.rects)}"/>`;
 
   paths += frame(W, H, theme.border);
@@ -347,9 +355,13 @@ async function main() {
   console.log("langs:", langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(", "));
   console.log("streak:", { total: streak.total, cur: streak.current, best: streak.longest });
 
+  // stats and langs share one table row in the README, so they must be exactly
+  // as tall as each other. Their row counts come from the API and can change,
+  // so measure once and let the shorter card pad to the taller one.
+  const rowHeight = Math.max(statsCard(stats, themes.dark).H, langsCard(langs, themes.dark).H);
   const cards = [
-    ["stats", (th) => statsCard(stats, th)],
-    ["top-langs", (th) => langsCard(langs, th)],
+    ["stats", (th) => statsCard(stats, th, rowHeight)],
+    ["top-langs", (th) => langsCard(langs, th, rowHeight)],
     ["streak", (th) => streakCard({
       total: streak.total,
       curLen: streak.current,
