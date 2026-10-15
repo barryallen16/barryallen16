@@ -135,6 +135,9 @@ export async function fetchStreak(username = USER, hosts = STREAK_HOSTS) {
 
 // The streak card repeats three columns (total / current / longest), each a
 // 28px value, a 14px label and a 12px date range, positioned by translate(x, y).
+// Columns are found by that label, never by left-to-right order: a positional read
+// would put each number on the wrong label if the card ever reorders them, and that
+// is exactly the silent wrong number this file refuses to produce anywhere else.
 export function parseStreakCard(svg) {
   const rows = [...svg.matchAll(/<g transform='translate\(([-\d.]+), ([-\d.]+)\)'[^>]*>\s*<text([^>]*)>([\s\S]*?)<\/text>/g)]
     .map((m) => ({
@@ -149,23 +152,31 @@ export function parseStreakCard(svg) {
     if (!row) throw new Error(`streak card is missing the ${size} ${what} of column ${col}`);
     return row.text;
   };
+  const byLabel = (word) => {
+    const col = cols.find((c) => pick(c, "14px", "label").includes(word));
+    if (col === undefined) throw new Error(`streak card has no "${word}" column`);
+    return {
+      value: int(pick(col, "28px", "value")),
+      range: pick(col, "12px", "range"),
+    };
+  };
+  const total = byLabel("Total"), current = byLabel("Current"), longest = byLabel("Longest");
   return {
-    total: int(pick(cols[0], "28px", "value")),
-    totalLabel: pick(cols[0], "14px", "label"),
-    totalRange: pick(cols[0], "12px", "range"),
-    current: int(pick(cols[1], "28px", "value")),
-    currentLabel: pick(cols[1], "14px", "label"),
-    currentRange: pick(cols[1], "12px", "range"),
-    longest: int(pick(cols[2], "28px", "value")),
-    longestLabel: pick(cols[2], "14px", "label"),
-    longestRange: pick(cols[2], "12px", "range"),
+    total: total.value,
+    totalRange: total.range,
+    current: current.value,
+    currentRange: current.range,
+    longest: longest.value,
+    longestRange: longest.range,
   };
 }
 
 // ---------------------------------------------------------------------------
 // SVG primitives — all coordinates land on the P=2 pixel grid (crispEdges)
 // ---------------------------------------------------------------------------
-function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+// Also escapes the quote: the label lands in an aria-label="..." attribute, and a
+// display name containing " would otherwise close it and emit invalid XML.
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
 // Returns { rects, width, height }. (x, y) is the ink's TOP-LEFT corner.
 function text(str, capPx, x, y, font) {

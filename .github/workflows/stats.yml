@@ -1,0 +1,55 @@
+name: Update Stats Cards
+
+# Keeps the local pixel-art stat SVGs live without hosting a server.
+# On a schedule (and on demand) it re-fetches the numbers from the public
+# stat-card APIs and rewrites assets/{stats,top-langs,streak}-{dark,light}.svg,
+# committing only when something actually changed. No token is needed.
+on:
+  schedule:
+    - cron: "27 5 * * *" # daily at 05:27 UTC; past the hour so GitHub does not delay it
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/stats.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stats-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install opentype.js
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+
+      - name: Regenerate stat cards
+        working-directory: scripts
+        run: node generate.mjs
+
+      - name: Commit updated cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/stats-*.svg assets/top-langs-*.svg assets/streak-*.svg
+          if git diff --cached --quiet; then
+            echo "No stat changes."
+          else
+            git commit -m "chore: refresh stat cards"
+            git pull --rebase origin main
+            git push
+          fi
