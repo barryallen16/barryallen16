@@ -211,8 +211,12 @@ function frame(width, height, color) {
 // the cards render 1:1 instead of being rescaled by the browser. CARD_W=460
 // reproduces the original full-width layout.
 const CARD_W = Number(process.env.CARD_W) || 430;
-const S = CARD_W / 460;
-const sc = (n) => Math.round(n * S);
+// The streak card sits alone in a colspan=2 row, so it is drawn at the full
+// table width rather than the half-width cell the other two cards get. Sharing
+// CARD_W left it upscaled 2x, which doubled the weight of every dotted rule.
+const STREAK_W = Number(process.env.STREAK_W) || CARD_W * 2;
+const scAt = (w) => (n) => Math.round(n * (w / 460));
+const sc = scAt(CARD_W);
 
 function statsCard(data, theme, minH = 0) {
   const F = fonts();
@@ -304,7 +308,8 @@ function langsCard(langs, theme, minH = 0) {
 // ---------------------------------------------------------------------------
 function streakCard(c, theme) {
   const F = fonts();
-  const W = CARD_W;
+  const W = STREAK_W;
+  const sc = scAt(W); // its own scale: this card is twice as wide as the others
   const H = sc(220); // header + numbers only, no calendar graph
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
