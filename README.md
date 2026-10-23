@@ -6,6 +6,9 @@
 </picture>
 </div>
 
+<details>
+<summary>Currently learning</summary>
+
 <div>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/row-learning-dark.svg">
@@ -13,6 +16,11 @@
   <img src="assets/row-learning-light.svg" alt="Currently learning: Rust and Inference Engineering">
 </picture>
 </div>
+
+</details>
+
+<details>
+<summary>Contact & links</summary>
 
 <div>
 <a href="mailto:rjayadithya11@gmail.com" target="_blank">
@@ -76,6 +84,11 @@
 </a>
 </p>
 
+</details>
+
+<details>
+<summary>Languages & Tools</summary>
+
 <div>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/h-tools-dark.svg">
@@ -91,6 +104,11 @@
   <img src="assets/tools-light.svg" alt="Languages and tools: AWS, Bash, CSS3, Docker, FastAPI, HTML5, Hugging Face, JavaScript, LangChain, Linux, PostgreSQL, Python, PyTorch, React, Rust, Scikit-learn, Selenium, Tailwind, TypeScript">
 </picture>
 </div>
+
+</details>
+
+<details>
+<summary>GitHub activity</summary>
 
 <table>
   <tr>
@@ -119,3 +137,5 @@
     </td>
   </tr>
 </table>
+
+</details>
