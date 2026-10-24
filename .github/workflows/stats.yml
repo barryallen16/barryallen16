@@ -1,12 +1,10 @@
 name: Update Stats Cards
 
 # Keeps the local pixel-art stat SVGs live without hosting a server.
-# On a schedule (and on demand) it re-fetches the numbers from the public
-# stat-card APIs and rewrites assets/{stats,top-langs,streak}-{dark,light}.svg,
-# committing only when something actually changed. No token is needed.
+# Also compacts static profile SVGs in assets/*.svg on first run.
 on:
   schedule:
-    - cron: "27 5 * * *" # daily at 05:27 UTC; past the hour so GitHub does not delay it
+    - cron: "27 5 * * *"
   workflow_dispatch:
   push:
     branches: [main, master]
@@ -37,7 +35,7 @@ jobs:
         working-directory: scripts
         run: npm ci --no-audit --no-fund
 
-      - name: Regenerate stat cards
+      - name: Regenerate stat cards and compact static SVGs
         working-directory: scripts
         run: node generate.mjs
 
@@ -45,11 +43,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/stats-*.svg assets/top-langs-*.svg assets/streak-*.svg
+          git add assets/*.svg
           if git diff --cached --quiet; then
             echo "No stat changes."
           else
-            git commit -m "chore: refresh stat cards"
+            git commit -m "chore: refresh and compact profile svg assets"
             git pull --rebase origin main
             git push
           fi

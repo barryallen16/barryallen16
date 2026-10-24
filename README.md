@@ -1,112 +1,76 @@
-<div>
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/title-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/title-light.svg">
-<img src="assets/title-light.svg" width="780" height="60" alt="Hi, I'm Jayadithya - A Curious AI Engineer">
-</picture>
-</div>
+&lt;div&gt;
+&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/title-dark.svg&quot;&gt;
+  &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/title-light.svg&quot;&gt;
+  &lt;img src=&quot;assets/title-light.svg&quot; alt=&quot;Hi, I&#39;m Jayadithya - A Curious AI Engineer&quot;&gt;
+&lt;/picture&gt;
+&lt;/div&gt;
 
-<div>
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/row-learning-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/row-learning-light.svg">
-<img src="assets/row-learning-light.svg" width="482" height="22" alt="Currently learning: Rust and Inference Engineering">
-</picture><br>
-<a href="mailto:rjayadithya11@gmail.com" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/row-email-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/row-email-light.svg">
-<img src="assets/row-email-light.svg" width="428" height="22" alt="How to reach me: rjayadithya11@gmail.com">
-</picture>
-</a><br>
-<a href="https://jayadithya.is-a.dev" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/row-projects-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/row-projects-light.svg">
-<img src="assets/row-projects-light.svg" width="371" height="22" alt="My projects: jayadithya.is-a.dev">
-</picture>
-</a><br>
-<a href="https://jayadithya.is-a.dev/resume" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/row-resume-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/row-resume-light.svg">
-<img src="assets/row-resume-light.svg" width="437" height="22" alt="My experience: jayadithya.is-a.dev/resume">
-</picture>
-</a>
-</div>
+&lt;div&gt;
+&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/row-learning-dark.svg&quot;&gt;
+  &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/row-learning-light.svg&quot;&gt;
+  &lt;img src=&quot;assets/row-learning-light.svg&quot; alt=&quot;Currently learning: Rust and Inference Engineering&quot;&gt;
+&lt;/picture&gt;&lt;br&gt;
+&lt;a href=&quot;mailto:rjayadithya11@gmail.com&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/row-email-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/row-email-light.svg&quot;&gt;&lt;img src=&quot;assets/row-email-light.svg&quot; alt=&quot;How to reach me: rjayadithya11@gmail.com&quot;&gt;&lt;/picture&gt;&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;https://jayadithya.is-a.dev&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/row-projects-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/row-projects-light.svg&quot;&gt;&lt;img src=&quot;assets/row-projects-light.svg&quot; alt=&quot;My projects: jayadithya.is-a.dev&quot;&gt;&lt;/picture&gt;&lt;/a&gt;&lt;br&gt;
+&lt;a href=&quot;https://jayadithya.is-a.dev/resume&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/row-resume-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/row-resume-light.svg&quot;&gt;&lt;img src=&quot;assets/row-resume-light.svg&quot; alt=&quot;My experience: jayadithya.is-a.dev/resume&quot;&gt;&lt;/picture&gt;&lt;/a&gt;
+&lt;/div&gt;
 
-<div>
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/h-connect-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/h-connect-light.svg">
-<img src="assets/h-connect-light.svg" width="780" height="28" alt="Connect with me">
-</picture>
-</div>
+&lt;div&gt;
+&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/h-connect-dark.svg&quot;&gt;
+  &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/h-connect-light.svg&quot;&gt;
+  &lt;img src=&quot;assets/h-connect-light.svg&quot; alt=&quot;Connect with me&quot;&gt;
+&lt;/picture&gt;
+&lt;/div&gt;
 
-<div>
-<a href="https://github.com/barryallen16" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/btn-github-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/btn-github-light.svg">
-<img src="assets/btn-github-light.svg" width="100" height="26" alt="GitHub: barryallen16">
-</picture>
-</a>
-<a href="https://linkedin.com/in/jayadithya-r" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/btn-linkedin-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/btn-linkedin-light.svg">
-<img src="assets/btn-linkedin-light.svg" width="111" height="26" alt="LinkedIn: jayadithya-r">
-</picture>
-</a>
-<a href="https://leetcode.com/jayadithyx16" target="\_blank">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/btn-leetcode-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/btn-leetcode-light.svg">
-<img src="assets/btn-leetcode-light.svg" width="118" height="26" alt="LeetCode: jayadithyx16">
-</picture>
-</a>
-</div>
+&lt;div&gt;
+&lt;a href=&quot;https://github.com/barryallen16&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/btn-github-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/btn-github-light.svg&quot;&gt;&lt;img src=&quot;assets/btn-github-light.svg&quot; alt=&quot;GitHub: barryallen16&quot;&gt;&lt;/picture&gt;&lt;/a&gt;
+&lt;a href=&quot;https://linkedin.com/in/jayadithya-r&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/btn-linkedin-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/btn-linkedin-light.svg&quot;&gt;&lt;img src=&quot;assets/btn-linkedin-light.svg&quot; alt=&quot;LinkedIn: jayadithya-r&quot;&gt;&lt;/picture&gt;&lt;/a&gt;
+&lt;a href=&quot;https://leetcode.com/jayadithyx16&quot; target=&quot;_blank&quot;&gt;&lt;picture&gt;&lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/btn-leetcode-dark.svg&quot;&gt;&lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/btn-leetcode-light.svg&quot;&gt;&lt;img src=&quot;assets/btn-leetcode-light.svg&quot; alt=&quot;LeetCode: jayadithyx16&quot;&gt;&lt;/picture&gt;&lt;/a&gt;
+&lt;/div&gt;
 
-<div>
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/h-tools-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/h-tools-light.svg">
-<img src="assets/h-tools-light.svg" width="780" height="28" alt="Languages and Tools">
-</picture>
-</div>
+&lt;div&gt;
+&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/h-tools-dark.svg&quot;&gt;
+  &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/h-tools-light.svg&quot;&gt;
+  &lt;img src=&quot;assets/h-tools-light.svg&quot; alt=&quot;Languages and Tools&quot;&gt;
+&lt;/picture&gt;
+&lt;/div&gt;
 
-<div>
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/tools-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/tools-light.svg">
-<img src="assets/tools-light.svg" width="780" height="53" alt="Languages and tools: AWS, Bash, CSS3, Docker, FastAPI, HTML5, Hugging Face, JavaScript, LangChain, Linux, PostgreSQL, Python, PyTorch, React, Rust, Scikit-learn, Selenium, Tailwind, TypeScript">
-</picture>
-</div>
+&lt;div&gt;
+&lt;picture&gt;
+  &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/tools-dark.svg&quot;&gt;
+  &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/tools-light.svg&quot;&gt;
+  &lt;img src=&quot;assets/tools-light.svg&quot; alt=&quot;Languages and tools: AWS, Bash, CSS3, Docker, FastAPI, HTML5, Hugging Face, JavaScript, LangChain, Linux, PostgreSQL, Python, PyTorch, React, Rust, Scikit-learn, Selenium, Tailwind, TypeScript&quot;&gt;
+&lt;/picture&gt;
+&lt;/div&gt;
 
-<table>
-<tr>
-<td width="50%">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/stats-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/stats-light.svg">
-<img src="assets/stats-light.svg" width="376" height="159" alt="GitHub stats">
-</picture>
-</td>
-<td width="50%">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/top-langs-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/top-langs-light.svg">
-<img src="assets/top-langs-light.svg" width="376" height="159" alt="Most used languages">
-</picture>
-</td>
-</tr>
-<tr>
-<td colspan="2">
-<picture>
-<source media="(prefers-color-scheme: dark)" srcset="assets/streak-dark.svg">
-<source media="(prefers-color-scheme: light)" srcset="assets/streak-light.svg">
-<img src="assets/streak-light.svg" width="779" height="68" alt="Contribution streak">
-</picture>
-</td>
-</tr>
-</table>
+&lt;table&gt;
+  &lt;tr&gt;
+    &lt;td width=&quot;50%&quot;&gt;
+      &lt;picture&gt;
+        &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/stats-dark.svg&quot;&gt;
+        &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/stats-light.svg&quot;&gt;
+        &lt;img src=&quot;assets/stats-light.svg&quot; alt=&quot;GitHub stats&quot;&gt;
+      &lt;/picture&gt;
+    &lt;/td&gt;
+    &lt;td width=&quot;50%&quot;&gt;
+      &lt;picture&gt;
+        &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/top-langs-dark.svg&quot;&gt;
+        &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/top-langs-light.svg&quot;&gt;
+        &lt;img src=&quot;assets/top-langs-light.svg&quot; alt=&quot;Most used languages&quot;&gt;
+      &lt;/picture&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td colspan=&quot;2&quot;&gt;
+      &lt;picture&gt;
+        &lt;source media=&quot;(prefers-color-scheme: dark)&quot; srcset=&quot;assets/streak-dark.svg&quot;&gt;
+        &lt;source media=&quot;(prefers-color-scheme: light)&quot; srcset=&quot;assets/streak-light.svg&quot;&gt;
+        &lt;img src=&quot;assets/streak-light.svg&quot; alt=&quot;Contribution streak&quot;&gt;
+      &lt;/picture&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
