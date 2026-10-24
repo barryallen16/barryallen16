@@ -1,7 +1,8 @@
 // Generates the three profile stat cards (stats, top-langs, streak) AND compacts
 // the static profile SVG assets (title, row-*, h-*, btn-*, tools) onto an exact
-// 1:1 physical-pixel grid (shape-rendering="crispEdges") so the entire profile
-// README fits above the fold without scrolling and without breaking pixels.
+// 1:1 physical-pixel grid (shape-rendering="crispEdges") with Gestalt spacing laws
+// (Law of Proximity, Common Region padding, and 3-tier vertical rhythm) so the
+// entire profile README fits on one screen without scrolling or breaking pixels.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
@@ -65,7 +66,7 @@ export function parseStatsCard(svg) {
   const title = tag(svg, "title");
   const desc = tag(svg, "desc");
   const metric = (label) => {
-    const m = desc.match(new RegExp(`${label}[^:]*:\\s*(\\d[\\d,]*(?:\\.\\d+)?[km]?)`, "i"));
+    const m = desc.match(new RegExp(`${label}[^:]*:\\s*([\\d,]+(?:\\.\\d+)?[km]?)`, "i"));
     if (!m) throw new Error(`stats card is missing "${label}" (desc: ${JSON.stringify(desc)})`);
     return int(m[1]);
   };
@@ -174,8 +175,31 @@ function frame(width, height, color) {
 }
 
 // ---------------------------------------------------------------------------
-// Compact Static SVG Assets (idempotent: converts original 6444b539 SVGs in-place)
+// Compact Static SVG Assets with Gestalt Proximity & Common Region Spacing
 // ---------------------------------------------------------------------------
+function getBounds(dStr) {
+  const tokens = dStr.match(/[MVHZ]|[-+]?\d*\.?\d+/g) || [];
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity, i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+    if (t === "M") {
+      const x = Number(tokens[i+1]), y = Number(tokens[i+2]);
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      i += 3;
+    } else if (t === "H") {
+      const x = Number(tokens[i+1]);
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      i += 2;
+    } else if (t === "V") {
+      const y = Number(tokens[i+1]);
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      i += 2;
+    } else i += 1;
+  }
+  return { minX, maxX, minY, maxY };
+}
+
 function shiftD(dStr, dx, dy) {
   const tokens = dStr.match(/[MVHZ]|[-+]?\d*\.?\d+/g) || [];
   let out = "", i = 0;
@@ -203,75 +227,94 @@ function compactStaticAssets() {
   const titleFile = join(OUT, "title-dark.svg");
   if (!existsSync(titleFile)) return;
   const origTitle = readFileSync(titleFile, "utf8");
-  if (!origTitle.includes('viewBox="0 0 880 148"')) return;
 
+  // 1. Hero Title (vbH = 85):
+  //    - Heading ("Hi, I'm Jayadithya"): y = 0..46
+  //    - 6px gap -> Subtitle ("A Curious AI Engineer"): y = 52..75 (including g descender)
+  //    - 5px gap -> Dotted rule at y = 80..84
   const tPaths = [...origTitle.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
   const [handD, hiD, subD] = tPaths;
-  const hiShifted = shiftD(hiD, 0, -23);
-  const subShifted = shiftD(subD, 0, -45);
+  const hiB = getBounds(hiD);
+  const subB = getBounds(subD);
+  const hiShifted = shiftD(hiD, 0, -hiB.minY);
+  const subShifted = shiftD(subD, 0, 50 - subB.minY);
   for (const [mode, th] of Object.entries(themes)) {
-    const vbW = VB_FULL_W, vbH = 80;
-    const svg = `${svgOpen(vbW, vbH, "Hi, I'm Jayadithya. A Curious AI Engineer")}<g transform="translate(0 -2) scale(2)"><path fill="${th.text}" d="${handD}"/></g><path fill="${th.text}" d="${hiShifted}"/><path fill="${th.muted}" d="${subShifted}"/><rect x="285" y="52" width="14" height="19" fill="${th.accent}"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" begin="0.4s" repeatCount="indefinite"/></rect>${dottedRule(74, vbW, th.border)}</svg>`;
+    const vbW = VB_FULL_W, vbH = 90;
+    const svg = `${svgOpen(vbW, vbH, "Hi, I'm Jayadithya. A Curious AI Engineer")}<g transform="translate(0 -5) scale(2)"><path fill="${th.text}" d="${handD}"/></g><path fill="${th.text}" d="${hiShifted}"/><path fill="${th.muted}" d="${subShifted}"/><rect x="285" y="52" width="14" height="19" fill="${th.accent}"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" begin="0.4s" repeatCount="indefinite"/></rect>${dottedRule(77, vbW, th.border)}</svg>`;
     writeFileSync(join(OUT, `title-${mode}.svg`), svg);
   }
 
+  // 2. Section Headings (h-connect, h-tools) (vbH = 40):
+  //    Law of Proximity: 9px top margin inside SVG (17px total break from previous section),
+  //    4px gap below 'Languages' g-descender to dotted rule at y=36..40.
   for (const [hname, label] of [["h-connect", "Connect with me:"], ["h-tools", "Languages and Tools:"]]) {
     const origH = readFileSync(join(OUT, `${hname}-dark.svg`), "utf8");
     const hp = [...origH.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-    const txtShifted = shiftD(hp[1], 0, -15);
+    const hB = getBounds(hp[1]);
+    const txtShifted = shiftD(hp[1], 0, 14 - hB.minY);
     for (const [mode, th] of Object.entries(themes)) {
-      const vbW = VB_FULL_W, vbH = 35;
-      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 1)"><path fill="${th.text}" d="${hp[0]}"/></g><path fill="${th.text}" d="${txtShifted}"/>${dottedRule(30, vbW, th.border)}</svg>`;
+      const vbW = VB_FULL_W, vbH = 45;
+      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 11)"><path fill="${th.text}" d="${hp[0]}"/></g><path fill="${th.text}" d="${txtShifted}"/>${dottedRule(40, vbW, th.border)}</svg>`;
       writeFileSync(join(OUT, `${hname}-${mode}.svg`), svg);
     }
   }
 
+  // 3. Bio/Contact Rows (row-learning, row-email, row-projects, row-resume) (vbH = 25):
   const rowConfigs = [
-    ["row-learning", "Currently learning: Rust and Inference Engineering", false, "text"],
-    ["row-email", "How to reach me: rjayadithya11@gmail.com", true, "accent"],
-    ["row-projects", "My projects: jayadithya.is-a.dev", true, "accent"],
-    ["row-resume", "My experience: jayadithya.is-a.dev/resume", true, "accent"],
+    ["row-learning", "Currently learning: Rust and Inference Engineering", false, "text", 705],
+    ["row-email", "How to reach me: rjayadithya11@gmail.com", true, "accent", 625],
+    ["row-projects", "My projects: jayadithya.is-a.dev", true, "accent", 540],
+    ["row-resume", "My experience: jayadithya.is-a.dev/resume", true, "accent", 640],
   ];
-  for (const [rname, label, hasUline, valKey] of rowConfigs) {
+  for (const [rname, label, hasUline, valKey, vbW] of rowConfigs) {
     const origR = readFileSync(join(OUT, `${rname}-dark.svg`), "utf8");
     const rp = [...origR.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-    const lblShifted = shiftD(rp[1], 0, -11.5);
-    const valShifted = shiftD(rp[2], 0, -11.5);
-    const origW = Number(origR.match(/width="(\d+)"/)[1]);
-    const vbW = Math.ceil(origW / 5) * 5;
-    const vbH = 30;
-    const ulineW = hasUline ? Number(origR.match(/<rect x="303" y="38\.5" width="(\d+)"/)[1]) : 0;
+    const dy = 1 - getBounds(rp[1]).minY;
+    const lblShifted = shiftD(rp[1], 0, dy);
+    const valShifted = shiftD(rp[2], 0, dy);
+    const vbH = 25;
+    const ulineMatch = origR.match(/<rect x="303" y="[^"]+" width="(\d+)"/);
+    const ulineW = hasUline && ulineMatch ? Number(ulineMatch[1]) : 0;
     for (const [mode, th] of Object.entries(themes)) {
-      const ulineSvg = hasUline ? `<rect x="303" y="26" width="${ulineW}" height="2" fill="${th.accent}"/>` : "";
-      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 1)"><path fill="${th.text}" d="${rp[0]}"/></g><path fill="${th.muted}" d="${lblShifted}"/><path fill="${th[valKey]}" d="${valShifted}"/>${ulineSvg}</svg>`;
+      const ulineSvg = hasUline ? `<rect x="303" y="23" width="${ulineW}" height="2" fill="${th.accent}"/>` : "";
+      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 -1)"><path fill="${th.text}" d="${rp[0]}"/></g><path fill="${th.muted}" d="${lblShifted}"/><path fill="${th[valKey]}" d="${valShifted}"/>${ulineSvg}</svg>`;
       writeFileSync(join(OUT, `${rname}-${mode}.svg`), svg);
     }
   }
 
-  for (const [bname, label] of [["btn-github", "GitHub"], ["btn-linkedin", "LinkedIn"], ["btn-leetcode", "LeetCode"]]) {
+  // 4. Social Buttons (btn-github, btn-linkedin, btn-leetcode) (vbH = 35):
+  const btnConfigs = [
+    ["btn-github", "GitHub", 150, 48],
+    ["btn-linkedin", "LinkedIn", 165, 49],
+    ["btn-leetcode", "LeetCode", 175, 49],
+  ];
+  for (const [bname, label, vbW, targetMinX] of btnConfigs) {
     const origB = readFileSync(join(OUT, `${bname}-dark.svg`), "utf8");
     const bp = [...origB.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-    const origVbW = Number(origB.match(/viewBox="0 0 (\d+) 52"/)[1]);
-    const vbW = Math.ceil((origVbW - 10) / 5) * 5;
     const vbH = 35;
-    const dx = Math.floor((vbW - origVbW) / 2);
-    const txtShifted = shiftD(bp[2], dx, -8.5);
+    const tB = getBounds(bp[2]);
+    const txtShifted = shiftD(bp[2], targetMinX - tB.minX, 8 - tB.minY);
     for (const [mode, th] of Object.entries(themes)) {
-      const svg = `${svgOpen(vbW, vbH, label)}${frame(vbW, vbH, th.border)}<g transform="translate(${16 + dx} 6)"><path fill="${th.text}" d="${bp[1]}"/></g><path fill="${th.text}" d="${txtShifted}"/></svg>`;
+      const svg = `${svgOpen(vbW, vbH, label)}${frame(vbW, vbH, th.border)}<g transform="translate(11 6)"><path fill="${th.text}" d="${bp[1]}"/></g><path fill="${th.text}" d="${txtShifted}"/></svg>`;
       writeFileSync(join(OUT, `${bname}-${mode}.svg`), svg);
     }
   }
 
+  // 5. Tool Badges Grid (tools) (vbH = 110):
+  //    8px horizontal gap, 7px vertical gap between rows, and 9px bottom margin
+  //    inside the SVG so the Stats Table sits 15px below the last badge row.
   const origTools = readFileSync(join(OUT, "tools-dark.svg"), "utf8");
   const ariaTools = origTools.match(/aria-label="([^"]+)"/)[1];
   const badgeGroups = [...origTools.matchAll(/<g transform="translate\(\d+ \d+\)"><path fill="[^"]+" d="M2 0h(\d+)v2[^"]+"\/>\s*<path fill="[^"]+" d="([^"]+)"\/><\/g>/g)];
-  const padX = 11, gapX = 8, badgeH = 31, gapY = 6;
+  const padX = 11, gapX = 8, badgeH = 29, gapY = 7;
   const rows = [[]];
   let curW = 0;
   for (const m of badgeGroups) {
-    const origBw = Number(m[1]) + 4;
-    const bw = (origBw - 34) + 2 * padX;
-    const txtShifted = shiftD(m[2], padX - 17, -6.5);
+    const rawTxt = m[2];
+    const tB = getBounds(rawTxt);
+    const txtW = Math.round(tB.maxX - tB.minX);
+    const bw = txtW + 2 * padX;
+    const txtShifted = shiftD(rawTxt, padX - tB.minX, 5 - tB.minY);
     if (curW + (curW > 0 ? gapX : 0) + bw <= VB_FULL_W) {
       curW += (curW > 0 ? gapX : 0) + bw;
       rows[rows.length - 1].push([bw, txtShifted]);
@@ -280,7 +323,7 @@ function compactStaticAssets() {
       curW = bw;
     }
   }
-  const vbH = Math.ceil((rows.length * badgeH + (rows.length - 1) * gapY) / 5) * 5;
+  const vbH = 110;
   for (const [mode, th] of Object.entries(themes)) {
     let groupsSvg = "";
     rows.forEach((rBadges, rIdx) => {
@@ -294,7 +337,7 @@ function compactStaticAssets() {
     const svg = `${svgOpen(VB_FULL_W, vbH, ariaTools)}${groupsSvg}</svg>`;
     writeFileSync(join(OUT, `tools-${mode}.svg`), svg);
   }
-  console.log("Compacted all 22 static SVG assets!");
+  console.log("Compacted all 22 static SVG assets with Gestalt spacing!");
 }
 
 // ---------------------------------------------------------------------------
@@ -314,25 +357,26 @@ function statsCard(data, theme, minH = 0) {
     ["Contributed To", data.contributedTo],
   ];
   if (data.rank) rows.push(["Rank", data.rank]);
-  const rowH = 23;
-  const top = 42;
+  const padX = 20;
+  const rowH = 24;
+  const top = 46;
   const rawH = Math.max(top + rows.length * rowH + 10, minH);
   const H = Math.ceil(rawH / 5) * 5;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(18, 10))}"/>`;
-  const title = text("GITHUB STATS", 18, 18 + chartIcon.width + 12, 11, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(padX, 10))}"/>`;
+  const title = text("GITHUB STATS", 18, padX + chartIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
   paths += dottedRule(34, W, theme.border);
 
   rows.forEach((r, i) => {
     const yTop = top + i * rowH;
-    const lbl = text(r[0], 14, 18, yTop, F.regular);
+    const lbl = text(r[0], 14, padX, yTop, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(lbl.rects)}"/>`;
     const vStr = String(r[1]);
     const vCap = 18;
     const probe = text(vStr, vCap, 0, 0, F.medium);
-    const vx = W - 18 - probe.width;
+    const vx = W - padX - probe.width;
     const vy = yTop - 3;
     const val = text(vStr, vCap, vx, vy, F.medium);
     paths += `<path fill="${theme.accent}" d="${rectsToPath(val.rects)}"/>`;
@@ -345,21 +389,23 @@ function statsCard(data, theme, minH = 0) {
 function langsCard(langs, theme, minH = 0) {
   const F = fonts();
   const W = CARD_W;
-  const rowH = 23;
-  const top = 42;
+  const padX = 20;
+  const rowH = 24;
+  const top = 46;
   const rawH = Math.max(top + langs.length * rowH + 10, minH);
   const H = Math.ceil(rawH / 5) * 5;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(18, 10))}"/>`;
-  const title = text("MOST USED LANGUAGES", 18, 18 + codeIcon.width + 12, 11, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(padX, 10))}"/>`;
+  const title = text("MOST USED LANGUAGES", 18, padX + codeIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
   paths += dottedRule(34, W, theme.border);
 
-  const barX = 18;
-  const barW = W - 36;
+  const barX = padX;
+  const barW = W - 2 * padX;
   langs.forEach((l, i) => {
     const yTop = top + i * rowH;
+    // Swatch + label + right-aligned percentage
     paths += `<rect x="${barX}" y="${yTop - 1}" width="10" height="10" fill="${l.color}"/>`;
     const nm = text(l.name, 13, barX + 16, yTop - 4, F.medium);
     paths += `<path fill="${theme.text}" d="${rectsToPath(nm.rects)}"/>`;
@@ -368,6 +414,7 @@ function langsCard(langs, theme, minH = 0) {
     const px = W - barX - probe.width;
     const pct = text(pctStr, 13, px, yTop - 4, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(pct.rects)}"/>`;
+    // Progress bar 2px clear of p/y descenders (yTop + 14..18) and 6px above next row
     const barY = yTop + 14;
     paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="4" fill="${theme.track}"/>`;
     const fillW = Math.max(2, Math.round((barW * l.pct) / 100));
@@ -381,33 +428,41 @@ function langsCard(langs, theme, minH = 0) {
 function streakCard(c, theme) {
   const F = fonts();
   const W = STREAK_W;
-  const H = 80;
+  const H = 85;
+  const padX = 20;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(18, 8))}"/>`;
-  const title = text("CONTRIBUTION STREAK", 18, 18 + flameIcon.width + 12, 11, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(padX, 8))}"/>`;
+  const title = text("CONTRIBUTION STREAK", 18, padX + flameIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(34, W, theme.border);
+  paths += dottedRule(33, W, theme.border);
 
-  const big = text(String(c.curLen), 26, 18, 43, F.medium);
+  // Col 1: Current Streak
+  const big = text(String(c.curLen), 26, padX, 46, F.medium);
   paths += `<path fill="${theme.accent}" d="${rectsToPath(big.rects)}"/>`;
   const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", 14,
-    18 + big.width + 14, 43, F.medium);
+    padX + big.width + 14, 45, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(dayLbl.rects)}"/>`;
-  const range = text(c.curRange, 13, 18 + big.width + 14, 60, F.regular);
+  const range = text(c.curRange, 13, padX + big.width + 14, 62, F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(range.rects)}"/>`;
 
-  paths += dottedVRule(390, 40, 73, theme.border);
+  paths += dottedVRule(356, 43, 76, theme.border);
 
-  const l1 = text(`Longest Streak: ${c.bestLen}`, 14, 412, 43, F.medium);
+  // Col 2: Longest Streak
+  const l1 = text(`Longest Streak: ${c.bestLen}`, 14, 382, 45, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(l1.rects)}"/>`;
-  const l1range = text(c.bestRange, 13, 412, 60, F.regular);
+  const l1range = text(c.bestRange, 13, 382, 62, F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(l1range.rects)}"/>`;
 
-  paths += dottedVRule(680, 40, 73, theme.border);
+  paths += dottedVRule(660, 43, 76, theme.border);
 
-  const tot = text(`Total Contributions: ${c.total}`, 14, 702, 51, F.medium);
+  // Col 3: Total Contributions + Date Range (balanced 2-line hierarchy across all 3 columns)
+  const tot = text(`Total Contributions: ${c.total}`, 14, 686, 45, F.medium);
   paths += `<path fill="${theme.accent}" d="${rectsToPath(tot.rects)}"/>`;
+  if (c.totalRange) {
+    const trange = text(c.totalRange, 13, 686, 62, F.regular);
+    paths += `<path fill="${theme.muted}" d="${rectsToPath(trange.rects)}"/>`;
+  }
 
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, `Contribution streak: ${c.curLen} days`)}${paths}</svg>` };
@@ -419,16 +474,23 @@ async function main() {
 
   let stats, langs, streak;
   if (process.env.OFFLINE_DATA === "1") {
-    stats = { name: "Jayadithya", rank: "B-", stars: 37, commits: 809, prs: 3, issues: 2, contributedTo: 2 };
+    stats = { name: "Jayadithya", rank: "B-", stars: 37, commits: 842, prs: 3, issues: 2, contributedTo: 2 };
     langs = [
-      { name: "Python", pct: 45.67, color: "#3572A5" },
-      { name: "JavaScript", pct: 24.41, color: "#f1e05a" },
-      { name: "HTML", pct: 17.06, color: "#e34c26" },
-      { name: "TypeScript", pct: 8.40, color: "#3178c6" },
-      { name: "Rust", pct: 3.41, color: "#dea584" },
-      { name: "CSS", pct: 1.05, color: "#663399" },
+      { name: "Python", pct: 45.0, color: "#3572A5" },
+      { name: "JavaScript", pct: 26.0, color: "#f1e05a" },
+      { name: "HTML", pct: 17.0, color: "#e34c26" },
+      { name: "TypeScript", pct: 8.0, color: "#3178c6" },
+      { name: "Rust", pct: 3.0, color: "#dea584" },
+      { name: "CSS", pct: 0.8, color: "#663399" },
     ];
-    streak = { total: 1301, current: 121, currentRange: "Jun 25 - Oct 23", longest: 121, longestRange: "Jun 25 - Oct 23" };
+    streak = {
+      total: 1334,
+      totalRange: "May 18, 2023 - Present",
+      current: 122,
+      currentRange: "Jun 25 - Oct 24",
+      longest: 122,
+      longestRange: "Jun 25 - Oct 24",
+    };
   } else {
     stats = parseStatsCard(await get(STATS_URL));
     langs = parseLangsCard(await get(LANGS_URL));
@@ -440,6 +502,7 @@ async function main() {
     ["top-langs", (th) => langsCard(langs, th, rowHeight)],
     ["streak", (th) => streakCard({
       total: streak.total,
+      totalRange: streak.totalRange,
       curLen: streak.current,
       curRange: streak.currentRange,
       bestLen: streak.longest,
