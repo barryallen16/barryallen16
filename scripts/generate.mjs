@@ -1,13 +1,8 @@
-// Generates the three profile stat cards (stats, top-langs, streak) as local
-// SVGs in the profile's existing pixelarticons + pixelated-Geist style.
-//
-// Data is fetched LIVE from the same public card APIs the README widgets use —
-// no GitHub token is involved:
-//   github-readme-stats.vercel.app/api            -> stats card (its own title/desc)
-//   github-readme-stats.vercel.app/api/top-langs  -> language rows + bar colours
-//   github-readme-streak-stats.herokuapp.com      -> streak numbers + date ranges
-// Run: node generate.mjs   (set TARGET_USER to render someone else)
-import { writeFileSync, mkdirSync } from "node:fs";
+// Generates the three profile stat cards (stats, top-langs, streak) AND compacts
+// the static profile SVG assets (title, row-*, h-*, btn-*, tools) onto an exact
+// 1:1 physical-pixel grid (shape-rendering="crispEdges") so the entire profile
+// README fits above the fold without scrolling and without breaking pixels.
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve } from "node:path";
 import { textPixels, rectsToPath } from "./pixel.mjs";
@@ -19,26 +14,12 @@ const OUT = join(__dirname, "..", "assets");
 const USER = process.env.TARGET_USER || "barryallen16";
 
 const STATS_URL = `https://github-readme-stats.vercel.app/api?username=${encodeURIComponent(USER)}&show_icons=true&locale=en`;
-// hide Jupyter Notebook: notebooks embed base64 plot images, and banksim alone
-// carries 130MB of them, which outweighs every other language on the profile.
 const LANGS_URL = `https://github-readme-stats.vercel.app/api/top-langs?username=${encodeURIComponent(USER)}&show_icons=true&locale=en&layout=compact&hide=Jupyter%20Notebook`;
-// The legacy herokuapp host is the one the README widget links, but it is
-// unreliable (it has served 503s and then hung); the maintained demolab host
-// serves the same card byte-for-byte. Both are tried, so one bad host cannot
-// leave the card ungenerated.
 const STREAK_HOSTS = [
   "https://github-readme-streak-stats.herokuapp.com/",
   "https://streak-stats.demolab.com/",
 ];
 
-// ---------------------------------------------------------------------------
-// Live data fetching. These are shared public instances (the streak service is
-// the README widget's own host), so requests are sequential and retried on the
-// statuses those hosts use when they are busy.
-// ---------------------------------------------------------------------------
-// Every attempt is bounded: these hosts can accept the connection and then never
-// answer, which would otherwise stall a scheduled run. Retries cover 429/5xx and
-// network failures; a real 4xx answer is not retried.
 export async function get(url, tries = 3, timeoutMs = 15000) {
   let lastErr;
   for (let attempt = 0; attempt < tries; attempt++) {
@@ -71,9 +52,6 @@ const tag = (svg, name) => {
   const m = svg.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`));
   return m ? strip(m[1]) : "";
 };
-// The cards print counts with thousands separators ("1,183"), and once a count
-// gets big they shorten it ("84.0k"). Both forms are expanded here, and anything
-// else throws, so a format change can never be read as a wrong number.
 const int = (raw) => {
   const m = String(raw).trim().match(/^(\d[\d,]*(?:\.\d+)?)\s*([km]?)$/i);
   if (!m) throw new Error(`not a number: ${JSON.stringify(raw)}`);
@@ -83,8 +61,6 @@ const int = (raw) => {
   return Math.round(n);
 };
 
-// The stats card states every metric in its own <desc>, e.g.
-// "Total Stars Earned: 37, Total Commits (last year) : 710, ..."
 export function parseStatsCard(svg) {
   const title = tag(svg, "title");
   const desc = tag(svg, "desc");
@@ -104,8 +80,6 @@ export function parseStatsCard(svg) {
   };
 }
 
-// Each language row is "<name> <pct>%" next to a data-testid="lang-progress"
-// bar painted in that language's colour, in the same order.
 export function parseLangsCard(svg) {
   const names = [...svg.matchAll(/<text[^>]*data-testid="lang-name"[^>]*>([\s\S]*?)<\/text>/g)]
     .map((m) => strip(m[1]));
@@ -121,8 +95,6 @@ export function parseLangsCard(svg) {
   });
 }
 
-// Fetches the streak card, trying each host in turn. The optional host list is
-// what the tests use to exercise the fallback path deliberately.
 export async function fetchStreak(username = USER, hosts = STREAK_HOSTS) {
   const errors = [];
   for (const host of hosts) {
@@ -135,11 +107,6 @@ export async function fetchStreak(username = USER, hosts = STREAK_HOSTS) {
   throw new Error(`no streak host answered:\n  ${errors.join("\n  ")}`);
 }
 
-// The streak card repeats three columns (total / current / longest), each a
-// 28px value, a 14px label and a 12px date range, positioned by translate(x, y).
-// Columns are found by that label, never by left-to-right order: a positional read
-// would put each number on the wrong label if the card ever reorders them, and that
-// is exactly the silent wrong number this file refuses to produce anywhere else.
 export function parseStreakCard(svg) {
   const rows = [...svg.matchAll(/<g transform='translate\(([-\d.]+), ([-\d.]+)\)'[^>]*>\s*<text([^>]*)>([\s\S]*?)<\/text>/g)]
     .map((m) => ({
@@ -174,49 +141,167 @@ export function parseStreakCard(svg) {
 }
 
 // ---------------------------------------------------------------------------
-// SVG primitives — all coordinates land on the P=2 pixel grid (crispEdges)
+// SVG primitives — CSS width/height = 0.80 * viewBox so on a 1.25x (125%)
+// display, 0.80 * 1.25 = 1.0000 physical screen pixel per viewBox unit!
 // ---------------------------------------------------------------------------
-// Also escapes the quote: the label lands in an aria-label="..." attribute, and a
-// display name containing " would otherwise close it and emit invalid XML.
 function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
-// Returns { rects, width, height }. (x, y) is the ink's TOP-LEFT corner.
 function text(str, capPx, x, y, font) {
   return textPixels(font, str, capPx, x, y);
 }
 
-function svgOpen(w, h, label) {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" shape-rendering="crispEdges"><title>${esc(label)}</title>`;
+function svgOpen(vbW, vbH, label) {
+  const cssW = Math.round(vbW * 0.8);
+  const cssH = Math.round(vbH * 0.8);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${cssW}" height="${cssH}" viewBox="0 0 ${vbW} ${vbH}" role="img" aria-label="${esc(label)}" shape-rendering="crispEdges"><title>${esc(label)}</title>`;
 }
 
-// dotted footer divider used across the existing assets
 function dottedRule(y, width, color) {
   let d = "";
   for (let x = 2; x < width - 2; x += 8) d += `M${x} ${y}h4v4h-4z`;
   return `<path fill="${color}" d="${d}"/>`;
 }
 
-// 2px inner border, matching btn-*.svg
+function dottedVRule(x, y1, y2, color) {
+  let d = "";
+  for (let y = y1; y <= y2 - 4; y += 8) d += `M${x} ${y}h4v4h-4z`;
+  return `<path fill="${color}" d="${d}"/>`;
+}
+
 function frame(width, height, color) {
   const t = 2;
   return `<path fill="${color}" d="M2 0h${width - 4}v${t}h${-(width - 4)}z M2 ${height - t}h${width - 4}v${t}h${-(width - 4)}z M0 2h${t}v${height - 4}h${-t}z M${width - t} 2h${t}v${height - 4}h${-t}z"/>`;
 }
 
 // ---------------------------------------------------------------------------
-// Card 1 — GitHub Stats
+// Compact Static SVG Assets (idempotent: converts original 6444b539 SVGs in-place)
 // ---------------------------------------------------------------------------
+function shiftD(dStr, dx, dy) {
+  const tokens = dStr.match(/[MVHZ]|[-+]?\d*\.?\d+/g) || [];
+  let out = "", i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+    if (t === "M") {
+      out += `M${Math.round(Number(tokens[i+1]) + dx)} ${Math.round(Number(tokens[i+2]) + dy)}`;
+      i += 3;
+    } else if (t === "H") {
+      out += `H${Math.round(Number(tokens[i+1]) + dx)}`;
+      i += 2;
+    } else if (t === "V") {
+      out += `V${Math.round(Number(tokens[i+1]) + dy)}`;
+      i += 2;
+    } else if (t === "Z") {
+      out += "Z";
+      i += 1;
+    } else i += 1;
+  }
+  return out;
+}
 
-// One number drives card width. Type sizes, margins and row heights all scale
-// with it. 430 is a half-width cell of the README's two-column card table, so
-// the cards render 1:1 instead of being rescaled by the browser. CARD_W=460
-// reproduces the original full-width layout.
-const CARD_W = Number(process.env.CARD_W) || 430;
-// The streak card sits alone in a colspan=2 row, so it is drawn at the full
-// table width rather than the half-width cell the other two cards get. Sharing
-// CARD_W left it upscaled 2x, which doubled the weight of every dotted rule.
-const STREAK_W = Number(process.env.STREAK_W) || CARD_W * 2;
-const scAt = (w) => (n) => Math.round(n * (w / 460));
-const sc = scAt(CARD_W);
+function compactStaticAssets() {
+  const VB_FULL_W = 1000;
+  const titleFile = join(OUT, "title-dark.svg");
+  if (!existsSync(titleFile)) return;
+  const origTitle = readFileSync(titleFile, "utf8");
+  if (!origTitle.includes('viewBox="0 0 880 148"')) return;
+
+  const tPaths = [...origTitle.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
+  const [handD, hiD, subD] = tPaths;
+  const hiShifted = shiftD(hiD, 0, -23);
+  const subShifted = shiftD(subD, 0, -45);
+  for (const [mode, th] of Object.entries(themes)) {
+    const vbW = VB_FULL_W, vbH = 80;
+    const svg = `${svgOpen(vbW, vbH, "Hi, I'm Jayadithya. A Curious AI Engineer")}<g transform="translate(0 -2) scale(2)"><path fill="${th.text}" d="${handD}"/></g><path fill="${th.text}" d="${hiShifted}"/><path fill="${th.muted}" d="${subShifted}"/><rect x="285" y="52" width="14" height="19" fill="${th.accent}"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" begin="0.4s" repeatCount="indefinite"/></rect>${dottedRule(74, vbW, th.border)}</svg>`;
+    writeFileSync(join(OUT, `title-${mode}.svg`), svg);
+  }
+
+  for (const [hname, label] of [["h-connect", "Connect with me:"], ["h-tools", "Languages and Tools:"]]) {
+    const origH = readFileSync(join(OUT, `${hname}-dark.svg`), "utf8");
+    const hp = [...origH.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
+    const txtShifted = shiftD(hp[1], 0, -15);
+    for (const [mode, th] of Object.entries(themes)) {
+      const vbW = VB_FULL_W, vbH = 35;
+      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 1)"><path fill="${th.text}" d="${hp[0]}"/></g><path fill="${th.text}" d="${txtShifted}"/>${dottedRule(30, vbW, th.border)}</svg>`;
+      writeFileSync(join(OUT, `${hname}-${mode}.svg`), svg);
+    }
+  }
+
+  const rowConfigs = [
+    ["row-learning", "Currently learning: Rust and Inference Engineering", false, "text"],
+    ["row-email", "How to reach me: rjayadithya11@gmail.com", true, "accent"],
+    ["row-projects", "My projects: jayadithya.is-a.dev", true, "accent"],
+    ["row-resume", "My experience: jayadithya.is-a.dev/resume", true, "accent"],
+  ];
+  for (const [rname, label, hasUline, valKey] of rowConfigs) {
+    const origR = readFileSync(join(OUT, `${rname}-dark.svg`), "utf8");
+    const rp = [...origR.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
+    const lblShifted = shiftD(rp[1], 0, -13.5);
+    const valShifted = shiftD(rp[2], 0, -13.5);
+    const origW = Number(origR.match(/width="(\d+)"/)[1]);
+    const vbW = Math.ceil(origW / 5) * 5;
+    const vbH = 26;
+    const ulineW = hasUline ? Number(origR.match(/<rect x="303" y="38\.5" width="(\d+)"/)[1]) : 0;
+    for (const [mode, th] of Object.entries(themes)) {
+      const ulineSvg = hasUline ? `<rect x="303" y="24" width="${ulineW}" height="2" fill="${th.accent}"/>` : "";
+      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 -1)"><path fill="${th.text}" d="${rp[0]}"/></g><path fill="${th.muted}" d="${lblShifted}"/><path fill="${th[valKey]}" d="${valShifted}"/>${ulineSvg}</svg>`;
+      writeFileSync(join(OUT, `${rname}-${mode}.svg`), svg);
+    }
+  }
+
+  for (const [bname, label] of [["btn-github", "GitHub"], ["btn-linkedin", "LinkedIn"], ["btn-leetcode", "LeetCode"]]) {
+    const origB = readFileSync(join(OUT, `${bname}-dark.svg`), "utf8");
+    const bp = [...origB.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
+    const origVbW = Number(origB.match(/viewBox="0 0 (\d+) 52"/)[1]);
+    const vbW = Math.ceil((origVbW - 10) / 5) * 5;
+    const vbH = 35;
+    const dx = Math.floor((vbW - origVbW) / 2);
+    const txtShifted = shiftD(bp[2], dx, -8.5);
+    for (const [mode, th] of Object.entries(themes)) {
+      const svg = `${svgOpen(vbW, vbH, label)}${frame(vbW, vbH, th.border)}<g transform="translate(${16 + dx} 6)"><path fill="${th.text}" d="${bp[1]}"/></g><path fill="${th.text}" d="${txtShifted}"/></svg>`;
+      writeFileSync(join(OUT, `${bname}-${mode}.svg`), svg);
+    }
+  }
+
+  const origTools = readFileSync(join(OUT, "tools-dark.svg"), "utf8");
+  const ariaTools = origTools.match(/aria-label="([^"]+)"/)[1];
+  const badgeGroups = [...origTools.matchAll(/<g transform="translate\(\d+ \d+\)"><path fill="[^"]+" d="M2 0h(\d+)v2[^"]+"\/>\s*<path fill="[^"]+" d="([^"]+)"\/><\/g>/g)];
+  const padX = 11, gapX = 8, badgeH = 31, gapY = 6;
+  const rows = [[]];
+  let curW = 0;
+  for (const m of badgeGroups) {
+    const origBw = Number(m[1]) + 4;
+    const bw = (origBw - 34) + 2 * padX;
+    const txtShifted = shiftD(m[2], padX - 17, -6.5);
+    if (curW + (curW > 0 ? gapX : 0) + bw <= VB_FULL_W) {
+      curW += (curW > 0 ? gapX : 0) + bw;
+      rows[rows.length - 1].push([bw, txtShifted]);
+    } else {
+      rows.push([[bw, txtShifted]]);
+      curW = bw;
+    }
+  }
+  const vbH = Math.ceil((rows.length * badgeH + (rows.length - 1) * gapY) / 5) * 5;
+  for (const [mode, th] of Object.entries(themes)) {
+    let groupsSvg = "";
+    rows.forEach((rBadges, rIdx) => {
+      let cx = 0;
+      const yOff = rIdx * (badgeH + gapY);
+      for (const [bw, txtShifted] of rBadges) {
+        groupsSvg += `<g transform="translate(${cx} ${yOff})">${frame(bw, badgeH, th.border)}<path fill="${th.text}" d="${txtShifted}"/></g>`;
+        cx += bw + gapX;
+      }
+    });
+    const svg = `${svgOpen(VB_FULL_W, vbH, ariaTools)}${groupsSvg}</svg>`;
+    writeFileSync(join(OUT, `tools-${mode}.svg`), svg);
+  }
+  console.log("Compacted all 22 static SVG assets!");
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic Stat Cards (stats, top-langs, streak)
+// ---------------------------------------------------------------------------
+const CARD_W = Number(process.env.CARD_W) || 475;
+const STREAK_W = Number(process.env.STREAK_W) || 985;
 
 function statsCard(data, theme, minH = 0) {
   const F = fonts();
@@ -229,140 +314,126 @@ function statsCard(data, theme, minH = 0) {
     ["Contributed To", data.contributedTo],
   ];
   if (data.rank) rows.push(["Rank", data.rank]);
-  const rowH = sc(36);
-  const top = sc(78);
-  const H = Math.max(top + rows.length * rowH + sc(30), minH);
+  const rowH = 22;
+  const top = 42;
+  const rawH = Math.max(top + rows.length * rowH + 10, minH);
+  const H = Math.ceil(rawH / 5) * 5;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  // header icon + title (vertically centered on each other)
-  const iconY = sc(26);
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(sc(24), iconY))}"/>`;
-  const title = text("GITHUB STATS", sc(20), sc(24) + chartIcon.width + sc(14), sc(28), F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(chartIcon.at(18, 10))}"/>`;
+  const title = text("GITHUB STATS", 18, 18 + chartIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(top - sc(20), W, theme.border);
+  paths += dottedRule(34, W, theme.border);
 
   rows.forEach((r, i) => {
     const yTop = top + i * rowH;
-    const lbl = text(r[0], sc(15), sc(26), yTop, F.regular);
+    const lbl = text(r[0], 14, 18, yTop, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(lbl.rects)}"/>`;
     const vStr = String(r[1]);
-    const vCap = sc(22);
-    // measure first (draw at 0), then place right-aligned
+    const vCap = 18;
     const probe = text(vStr, vCap, 0, 0, F.medium);
-    const vx = W - sc(26) - probe.width;
-    const vy = yTop - sc(4);
+    const vx = W - 18 - probe.width;
+    const vy = yTop - 3;
     const val = text(vStr, vCap, vx, vy, F.medium);
     paths += `<path fill="${theme.accent}" d="${rectsToPath(val.rects)}"/>`;
   });
 
-  paths += dottedRule(H - sc(20), W, theme.border);
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, `${data.name}'s GitHub stats`)}${paths}</svg>` };
 }
 
-// ---------------------------------------------------------------------------
-// Card 2 — Most Used Languages
-// ---------------------------------------------------------------------------
 function langsCard(langs, theme, minH = 0) {
   const F = fonts();
   const W = CARD_W;
-  const rowH = sc(40);
-  const top = sc(78);
-  const H = Math.max(top + langs.length * rowH + sc(30), minH);
+  const rowH = 22;
+  const top = 42;
+  const rawH = Math.max(top + langs.length * rowH + 10, minH);
+  const H = Math.ceil(rawH / 5) * 5;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(sc(24), sc(26)))}"/>`;
-  const title = text("MOST USED LANGUAGES", sc(20), sc(24) + codeIcon.width + sc(14), sc(28), F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(codeIcon.at(18, 10))}"/>`;
+  const title = text("MOST USED LANGUAGES", 18, 18 + codeIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(top - sc(20), W, theme.border);
+  paths += dottedRule(34, W, theme.border);
 
-  const barX = sc(26);
-  const barW = W - sc(52);
+  const barX = 18;
+  const barW = W - 36;
   langs.forEach((l, i) => {
     const yTop = top + i * rowH;
-    // language color swatch (filled square)
-    paths += `<rect x="${barX}" y="${yTop}" width="${sc(14)}" height="${sc(14)}" fill="${l.color}"/>`;
-    // name
-    const nm = text(l.name, sc(15), barX + sc(22), yTop - sc(1), F.medium);
+    paths += `<rect x="${barX}" y="${yTop}" width="11" height="11" fill="${l.color}"/>`;
+    const nm = text(l.name, 14, barX + 17, yTop - 2, F.medium);
     paths += `<path fill="${theme.text}" d="${rectsToPath(nm.rects)}"/>`;
-    // percentage right-aligned
     const pctStr = `${l.pct < 1 && l.pct > 0 ? "<1" : Math.round(l.pct)}%`;
-    const probe = text(pctStr, sc(15), 0, 0, F.regular);
-    const px = W - sc(26) - probe.width;
-    const pct = text(pctStr, sc(15), px, yTop - sc(1), F.regular);
+    const probe = text(pctStr, 14, 0, 0, F.regular);
+    const px = W - barX - probe.width;
+    const pct = text(pctStr, 14, px, yTop - 2, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(pct.rects)}"/>`;
-    // bar track + fill
-    const barY = yTop + sc(22);
-    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="${sc(8)}" fill="${theme.track}"/>`;
-    const fillW = Math.max(sc(2), Math.round((barW * l.pct) / 100));
-    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="${sc(8)}" fill="${l.color}"/>`;
+    const barY = yTop + 15;
+    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="5" fill="${theme.track}"/>`;
+    const fillW = Math.max(2, Math.round((barW * l.pct) / 100));
+    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="5" fill="${l.color}"/>`;
   });
 
-  paths += dottedRule(H - sc(20), W, theme.border);
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, "Most used languages")}${paths}</svg>` };
 }
 
-// ---------------------------------------------------------------------------
-// Card 3 — Contribution Streak (numbers only; deliberately no calendar graph)
-// ---------------------------------------------------------------------------
 function streakCard(c, theme) {
   const F = fonts();
   const W = STREAK_W;
-  const sc = scAt(W); // its own scale: this card is twice as wide as the others
-  const H = sc(220); // header + numbers only, no calendar graph
+  const H = 80;
 
   let paths = `<rect width="${W}" height="${H}" fill="${theme.bg}"/>`;
-  // header
-  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(sc(24), sc(24)))}"/>`;
-  const title = text("CONTRIBUTION STREAK", sc(20), sc(24) + flameIcon.width + sc(14), sc(26), F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(flameIcon.at(18, 8))}"/>`;
+  const title = text("CONTRIBUTION STREAK", 18, 18 + flameIcon.width + 12, 11, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(title.rects)}"/>`;
-  paths += dottedRule(sc(70), W, theme.border);
+  paths += dottedRule(34, W, theme.border);
 
-  // big current streak number + label
-  const big = text(String(c.curLen), sc(44), sc(26), sc(90), F.medium);
+  const big = text(String(c.curLen), 26, 18, 43, F.medium);
   paths += `<path fill="${theme.accent}" d="${rectsToPath(big.rects)}"/>`;
-  const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", sc(14),
-    sc(26) + big.width + sc(12), sc(96), F.regular);
+  const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", 14,
+    18 + big.width + 14, 43, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(dayLbl.rects)}"/>`;
-  const range = text(c.curRange, sc(13), sc(26) + big.width + sc(12), sc(116), F.regular);
+  const range = text(c.curRange, 13, 18 + big.width + 14, 60, F.regular);
   paths += `<path fill="${theme.muted}" d="${rectsToPath(range.rects)}"/>`;
 
-  // longest streak row
-  const l1 = text(`Longest Streak: ${c.bestLen}`, sc(14), sc(26), sc(142), F.regular);
-  paths += `<path fill="${theme.muted}" d="${rectsToPath(l1.rects)}"/>`;
-  const l1s = c.bestRange;
-  const l1probe = text(l1s, sc(12), 0, 0, F.regular);
-  const l1x = W - sc(26) - l1probe.width;
-  const l1range = text(l1s, sc(12), l1x, sc(145), F.regular);
-  paths += `<path fill="${theme.border}" d="${rectsToPath(l1range.rects)}"/>`;
+  paths += dottedVRule(390, 40, 73, theme.border);
 
-  // totals row — the streak service exposes no daily calendar, and this card
-  // deliberately draws no contribution graph
-  paths += dottedRule(sc(172), W, theme.border);
-  const tot = text(`Total Contributions: ${c.total}`, sc(14), sc(26), sc(188), F.regular);
-  paths += `<path fill="${theme.muted}" d="${rectsToPath(tot.rects)}"/>`;
+  const l1 = text(`Longest Streak: ${c.bestLen}`, 14, 412, 43, F.medium);
+  paths += `<path fill="${theme.text}" d="${rectsToPath(l1.rects)}"/>`;
+  const l1range = text(c.bestRange, 13, 412, 60, F.regular);
+  paths += `<path fill="${theme.muted}" d="${rectsToPath(l1range.rects)}"/>`;
+
+  paths += dottedVRule(680, 40, 73, theme.border);
+
+  const tot = text(`Total Contributions: ${c.total}`, 14, 702, 51, F.medium);
+  paths += `<path fill="${theme.accent}" d="${rectsToPath(tot.rects)}"/>`;
 
   paths += frame(W, H, theme.border);
   return { W, H, svg: `${svgOpen(W, H, `Contribution streak: ${c.curLen} days`)}${paths}</svg>` };
 }
 
-// ---------------------------------------------------------------------------
-// main
-// ---------------------------------------------------------------------------
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  // Sequential (not parallel) to stay polite to the shared public instances.
-  const stats = parseStatsCard(await get(STATS_URL));
-  const langs = parseLangsCard(await get(LANGS_URL));
-  const streak = await fetchStreak();
-  console.log("stats:", stats);
-  console.log("langs:", langs.map((l) => `${l.name} ${l.pct.toFixed(1)}%`).join(", "));
-  console.log("streak:", { total: streak.total, cur: streak.current, best: streak.longest });
+  compactStaticAssets();
 
-  // stats and langs share one table row in the README, so they must be exactly
-  // as tall as each other. Their row counts come from the API and can change,
-  // so measure once and let the shorter card pad to the taller one.
+  let stats, langs, streak;
+  if (process.env.OFFLINE_DATA === "1") {
+    stats = { name: "Jayadithya", rank: "B-", stars: 37, commits: 809, prs: 3, issues: 2, contributedTo: 2 };
+    langs = [
+      { name: "Python", pct: 45.67, color: "#3572A5" },
+      { name: "JavaScript", pct: 24.41, color: "#f1e05a" },
+      { name: "HTML", pct: 17.06, color: "#e34c26" },
+      { name: "TypeScript", pct: 8.40, color: "#3178c6" },
+      { name: "Rust", pct: 3.41, color: "#dea584" },
+      { name: "CSS", pct: 1.05, color: "#663399" },
+    ];
+    streak = { total: 1301, current: 121, currentRange: "Jun 25 - Oct 23", longest: 121, longestRange: "Jun 25 - Oct 23" };
+  } else {
+    stats = parseStatsCard(await get(STATS_URL));
+    langs = parseLangsCard(await get(LANGS_URL));
+    streak = await fetchStreak();
+  }
   const rowHeight = Math.max(statsCard(stats, themes.dark).H, langsCard(langs, themes.dark).H);
   const cards = [
     ["stats", (th) => statsCard(stats, th, rowHeight)],
@@ -385,8 +456,6 @@ async function main() {
   }
 }
 
-// Runs when invoked as a script (`node generate.mjs`, absolute or relative) but
-// not when imported, so the parsers can be tested without rewriting the assets.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }

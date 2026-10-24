@@ -1,30 +1,21 @@
-// Rasterize a TrueType font (Geist) onto a coarse pixel grid and emit the
-// filled cells as merged rectangles. This reproduces the "pixelated Geist" look
-// used across the profile's existing SVG assets (crispEdges, chunky 2px strokes).
+// Rasterize a TrueType font (Geist) onto a crisp integer pixel grid and emit
+// filled cells as merged integer rectangles (shape-rendering="crispEdges").
 import opentype from "opentype.js";
 
-export const P = 2; // default pixel size in output units (matches existing assets)
+export const P = 2;
 
-// Sample cell size for a given cap height. A 2px cell needs about 24px of cap
-// height to leave 12 grid rows, which is roughly the least an "S" needs before it
-// reads as a "5" and a "G" loses its spur. Below that, sample on a 1px grid: the
-// 2px grid at a 20px cap height gives only 10 rows and renders headings rougher
-// than the 15px body text, which has 15.
 export const pixelSizeFor = (capHeightPx) => (capHeightPx < 24 ? 1 : P);
 
-const CAP_RATIO = 0.72; // Geist cap-height / em (approx)
+const CAP_RATIO = 0.71;
 
-// Load a font once.
 export function loadFont(path) {
   return opentype.loadSync(path);
 }
 
-// Flatten opentype path commands into an array of contours (polygons of {x,y}).
 function flatten(commands) {
   const contours = [];
   let cur = null;
   let cx = 0, cy = 0, sx = 0, sy = 0;
-  const lerp = (a, b, t) => a + (b - a) * t;
   for (const c of commands) {
     if (c.type === "M") {
       cur = [{ x: c.x, y: c.y }];
@@ -34,21 +25,23 @@ function flatten(commands) {
       cur.push({ x: c.x, y: c.y });
       cx = c.x; cy = c.y;
     } else if (c.type === "Q") {
-      const n = 6;
-      for (let i = 1; i <= n; i++) {
-        const t = i / n, mt = 1 - t;
-        const x = mt * mt * cx + 2 * mt * t * c.x1 + t * t * c.x;
-        const y = mt * mt * cy + 2 * mt * t * c.y1 + t * t * c.y;
-        cur.push({ x, y });
-      }
-      cx = c.x; cy = c.y;
-    } else if (c.type === "C") {
       const n = 8;
       for (let i = 1; i <= n; i++) {
         const t = i / n, mt = 1 - t;
-        const x = mt*mt*mt*cx + 3*mt*mt*t*c.x1 + 3*mt*t*t*c.x2 + t*t*t*c.x;
-        const y = mt*mt*mt*cy + 3*mt*mt*t*c.y1 + 3*mt*t*t*c.y2 + t*t*t*c.y;
-        cur.push({ x, y });
+        cur.push({
+          x: mt * mt * cx + 2 * mt * t * c.x1 + t * t * c.x,
+          y: mt * mt * cy + 2 * mt * t * c.y1 + t * t * c.y,
+        });
+      }
+      cx = c.x; cy = c.y;
+    } else if (c.type === "C") {
+      const n = 10;
+      for (let i = 1; i <= n; i++) {
+        const t = i / n, mt = 1 - t;
+        cur.push({
+          x: mt*mt*mt*cx + 3*mt*mt*t*c.x1 + 3*mt*t*t*c.x2 + t*t*t*c.x,
+          y: mt*mt*mt*cy + 3*mt*mt*t*c.y1 + 3*mt*t*t*c.y2 + t*t*t*c.y,
+        });
       }
       cx = c.x; cy = c.y;
     } else if (c.type === "Z") {
@@ -58,7 +51,6 @@ function flatten(commands) {
   return contours;
 }
 
-// Even-odd point-in-polygon test with a ray cast to +Infinity on x.
 function inside(contours, x, y) {
   let hit = false;
   for (const pts of contours) {
@@ -75,8 +67,6 @@ function inside(contours, x, y) {
   return hit;
 }
 
-// Rasterize a string at a given fontSize (output units) with pixel size P.
-// Returns { grid, cols, rows, minX, minY } where grid[r][c] is boolean.
 export function rasterText(font, str, fontSize, cell = P) {
   const path = font.getPath(str, 0, 0, fontSize);
   if (!path.commands.length) return { grid: [], cols: 0, rows: 0, minX: 0, minY: 0 };
@@ -100,7 +90,6 @@ export function rasterText(font, str, fontSize, cell = P) {
   return { grid, cols, rows, minX, minY };
 }
 
-// Greedy merge of filled cells into larger rectangles (cell units).
 function mergeRects(grid, cols, rows) {
   const used = grid.map((row) => row.map(() => false));
   const rects = [];
@@ -125,26 +114,88 @@ function mergeRects(grid, cols, rows) {
   return rects;
 }
 
-// Public: rasterize text and return merged rects in OUTPUT units, positioned so
-// the ink's top-left lands at (x, y). Returns { rects, width, height, cell }.
-// The origin is snapped to the cell grid, so the blocks stay on-grid and the
-// text does not land on half-pixels of the 2px style.
-export function textPixels(font, str, capHeightPx, x, y, cell = pixelSizeFor(capHeightPx)) {
+const glyphCache = new WeakMap();
+function getCharGrid(font, ch, capHeightPx) {
+  let fMap = glyphCache.get(font);
+  if (!fMap) { fMap = new Map(); glyphCache.set(font, fMap); }
+  const key = `${ch}@${capHeightPx}`;
+  if (fMap.has(key)) return fMap.get(key);
+
   const fontSize = capHeightPx / CAP_RATIO;
-  const sx = Math.round(x / cell) * cell;
-  const sy = Math.round(y / cell) * cell;
-  const { grid, cols, rows, minX, minY } = rasterText(font, str, fontSize, cell);
-  const cellRects = mergeRects(grid, cols, rows);
-  const rects = cellRects.map((rc) => ({
-    x: sx + rc.x * cell, // origin snapped to the cell grid
-    y: sy + rc.y * cell,
-    w: rc.w * cell,
-    h: rc.h * cell,
+  const wHH = font.getPath("HH", 0, 0, fontSize).getBoundingBox();
+  const wHchH = font.getPath("H" + ch + "H", 0, 0, fontSize).getBoundingBox();
+  const adv = Math.max(1, Math.round((wHchH.x2 - wHchH.x1) - (wHH.x2 - wHH.x1)));
+
+  const path = font.getPath(ch, 0, 0, fontSize);
+  if (!path.commands.length) {
+    const empty = { rects: [], adv };
+    fMap.set(key, empty);
+    return empty;
+  }
+  const bb = path.getBoundingBox();
+  const lsb = Math.round(bb.x1);
+  const shiftX = 1.08 - bb.x1;
+  const cols = Math.max(1, Math.ceil(bb.x2 - bb.x1) + 3);
+  const y0 = Math.floor(-capHeightPx) - 4;
+  const rows = Math.ceil(capHeightPx) + 12;
+  const rawContours = flatten(path.commands);
+  const contours = rawContours.map((pts) => pts.map((p) => ({ x: p.x + shiftX, y: p.y })));
+
+  const grid = [];
+  for (let r = 0; r < rows; r++) {
+    const cy = y0 + r + 0.5;
+    const row = [];
+    for (let c = 0; c < cols; c++) {
+      const cx = c + 0.5;
+      const hit =
+        inside(contours, cx, cy) ||
+        inside(contours, cx - 0.26, cy) ||
+        inside(contours, cx + 0.26, cy);
+      row.push(hit);
+    }
+    grid.push(row);
+  }
+  for (let r = 1; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 3; c++) {
+      if (!grid[r][c] && grid[r][c+1] && grid[r][c+2] && grid[r][c+3] && !grid[r][c+4]) {
+        if (grid[r-1][c+1] && grid[r+1][c+1] && grid[r-1][c+3] && grid[r+1][c+3]) {
+          grid[r][c+3] = false;
+        }
+      }
+    }
+  }
+  const merged = mergeRects(grid, cols, rows).map((rc) => ({
+    x: (rc.x - 1) + lsb,
+    y: Math.round(y0 + capHeightPx) + rc.y,
+    w: rc.w,
+    h: rc.h,
   }));
-  return { rects, width: cols * cell, height: rows * cell, cell };
+  const res = { rects: merged, adv };
+  fMap.set(key, res);
+  return res;
 }
 
-// Convert a list of rects {x,y,w,h} into a single SVG path 'd' string.
+export function textPixels(font, str, capHeightPx, x, y, cell = 1) {
+  let curX = Math.round(x);
+  const sy = Math.round(y);
+  const rects = [];
+  let totalW = 0;
+  for (const ch of String(str)) {
+    const g = getCharGrid(font, ch, capHeightPx);
+    for (const r of g.rects) {
+      rects.push({
+        x: curX + r.x,
+        y: sy + r.y,
+        w: r.w,
+        h: r.h,
+      });
+    }
+    curX += g.adv;
+    totalW += g.adv;
+  }
+  return { rects, width: totalW, height: Math.round(capHeightPx), cell: 1 };
+}
+
 export function rectsToPath(rects) {
   let d = "";
   for (const r of rects) {
