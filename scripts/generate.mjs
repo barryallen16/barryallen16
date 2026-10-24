@@ -235,15 +235,15 @@ function compactStaticAssets() {
   for (const [rname, label, hasUline, valKey] of rowConfigs) {
     const origR = readFileSync(join(OUT, `${rname}-dark.svg`), "utf8");
     const rp = [...origR.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-    const lblShifted = shiftD(rp[1], 0, -13.5);
-    const valShifted = shiftD(rp[2], 0, -13.5);
+    const lblShifted = shiftD(rp[1], 0, -11.5);
+    const valShifted = shiftD(rp[2], 0, -11.5);
     const origW = Number(origR.match(/width="(\d+)"/)[1]);
     const vbW = Math.ceil(origW / 5) * 5;
-    const vbH = 26;
+    const vbH = 30;
     const ulineW = hasUline ? Number(origR.match(/<rect x="303" y="38\.5" width="(\d+)"/)[1]) : 0;
     for (const [mode, th] of Object.entries(themes)) {
-      const ulineSvg = hasUline ? `<rect x="303" y="24" width="${ulineW}" height="2" fill="${th.accent}"/>` : "";
-      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 -1)"><path fill="${th.text}" d="${rp[0]}"/></g><path fill="${th.muted}" d="${lblShifted}"/><path fill="${th[valKey]}" d="${valShifted}"/>${ulineSvg}</svg>`;
+      const ulineSvg = hasUline ? `<rect x="303" y="26" width="${ulineW}" height="2" fill="${th.accent}"/>` : "";
+      const svg = `${svgOpen(vbW, vbH, label)}<g transform="translate(0 1)"><path fill="${th.text}" d="${rp[0]}"/></g><path fill="${th.muted}" d="${lblShifted}"/><path fill="${th[valKey]}" d="${valShifted}"/>${ulineSvg}</svg>`;
       writeFileSync(join(OUT, `${rname}-${mode}.svg`), svg);
     }
   }
@@ -314,7 +314,7 @@ function statsCard(data, theme, minH = 0) {
     ["Contributed To", data.contributedTo],
   ];
   if (data.rank) rows.push(["Rank", data.rank]);
-  const rowH = 22;
+  const rowH = 23;
   const top = 42;
   const rawH = Math.max(top + rows.length * rowH + 10, minH);
   const H = Math.ceil(rawH / 5) * 5;
@@ -345,7 +345,7 @@ function statsCard(data, theme, minH = 0) {
 function langsCard(langs, theme, minH = 0) {
   const F = fonts();
   const W = CARD_W;
-  const rowH = 22;
+  const rowH = 23;
   const top = 42;
   const rawH = Math.max(top + langs.length * rowH + 10, minH);
   const H = Math.ceil(rawH / 5) * 5;
@@ -360,18 +360,18 @@ function langsCard(langs, theme, minH = 0) {
   const barW = W - 36;
   langs.forEach((l, i) => {
     const yTop = top + i * rowH;
-    paths += `<rect x="${barX}" y="${yTop}" width="11" height="11" fill="${l.color}"/>`;
-    const nm = text(l.name, 14, barX + 17, yTop - 2, F.medium);
+    paths += `<rect x="${barX}" y="${yTop - 1}" width="10" height="10" fill="${l.color}"/>`;
+    const nm = text(l.name, 13, barX + 16, yTop - 4, F.medium);
     paths += `<path fill="${theme.text}" d="${rectsToPath(nm.rects)}"/>`;
     const pctStr = `${l.pct < 1 && l.pct > 0 ? "<1" : Math.round(l.pct)}%`;
-    const probe = text(pctStr, 14, 0, 0, F.regular);
+    const probe = text(pctStr, 13, 0, 0, F.regular);
     const px = W - barX - probe.width;
-    const pct = text(pctStr, 14, px, yTop - 2, F.regular);
+    const pct = text(pctStr, 13, px, yTop - 4, F.regular);
     paths += `<path fill="${theme.muted}" d="${rectsToPath(pct.rects)}"/>`;
-    const barY = yTop + 15;
-    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="5" fill="${theme.track}"/>`;
+    const barY = yTop + 14;
+    paths += `<rect x="${barX}" y="${barY}" width="${barW}" height="4" fill="${theme.track}"/>`;
     const fillW = Math.max(2, Math.round((barW * l.pct) / 100));
-    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="5" fill="${l.color}"/>`;
+    paths += `<rect x="${barX}" y="${barY}" width="${fillW}" height="4" fill="${l.color}"/>`;
   });
 
   paths += frame(W, H, theme.border);
