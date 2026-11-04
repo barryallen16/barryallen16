@@ -14,8 +14,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "assets");
 const USER = process.env.TARGET_USER || "barryallen16";
 
-const STATS_URL = `https://github-readme-stats.vercel.app/api?username=${encodeURIComponent(USER)}&show_icons=true&locale=en`;
-const LANGS_URL = `https://github-readme-stats.vercel.app/api/top-langs?username=${encodeURIComponent(USER)}&show_icons=true&locale=en&layout=compact&hide=Jupyter%20Notebook`;
+const STATS_HOSTS = [
+  "https://github-stats-extended.vercel.app",
+  "https://github-readme-stats.vercel.app",
+];
+
 const STREAK_HOSTS = [
   "https://github-readme-streak-stats.herokuapp.com/",
   "https://streak-stats.demolab.com/",
@@ -94,6 +97,32 @@ export function parseLangsCard(svg) {
     if (!m) throw new Error(`unexpected top-langs row: ${JSON.stringify(row)}`);
     return { name: m[1], pct: Number(m[2]), color: colors[i] };
   });
+}
+
+export async function fetchStats(username = USER, hosts = STATS_HOSTS) {
+  const errors = [];
+  for (const host of hosts) {
+    try {
+      const base = host.replace(/\/+$/, "");
+      return parseStatsCard(await get(`${base}/api?username=${encodeURIComponent(username)}&show_icons=true&locale=en`, 2, 10000));
+    } catch (e) {
+      errors.push(`${host.replace(/^https:\/\//, "")}: ${e.message}`);
+    }
+  }
+  throw new Error(`no stats host answered:\n  ${errors.join("\n  ")}`);
+}
+
+export async function fetchLangs(username = USER, hosts = STATS_HOSTS) {
+  const errors = [];
+  for (const host of hosts) {
+    try {
+      const base = host.replace(/\/+$/, "");
+      return parseLangsCard(await get(`${base}/api/top-langs?username=${encodeURIComponent(username)}&show_icons=true&locale=en&layout=compact&hide=Jupyter%20Notebook,HTML,CSS`, 2, 10000));
+    } catch (e) {
+      errors.push(`${host.replace(/^https:\/\//, "")}: ${e.message}`);
+    }
+  }
+  throw new Error(`no langs host answered:\n  ${errors.join("\n  ")}`);
 }
 
 export async function fetchStreak(username = USER, hosts = STREAK_HOSTS) {
@@ -440,7 +469,7 @@ function streakCard(c, theme) {
   // Col 1: Current Streak
   const big = text(String(c.curLen), 26, padX, 46, F.medium);
   paths += `<path fill="${theme.accent}" d="${rectsToPath(big.rects)}"/>`;
-  const dayLbl = text(c.curLen === 1 ? "DAY CURRENT STREAK" : "DAYS CURRENT STREAK", 14,
+  const dayLbl = text(c.curLen === 1 ? "Day Current Streak" : "Days Current Streak", 14,
     padX + big.width + 14, 45, F.medium);
   paths += `<path fill="${theme.text}" d="${rectsToPath(dayLbl.rects)}"/>`;
   const range = text(c.curRange, 13, padX + big.width + 14, 62, F.regular);
@@ -476,12 +505,12 @@ async function main() {
   if (process.env.OFFLINE_DATA === "1") {
     stats = { name: "Jayadithya", rank: "B-", stars: 37, commits: 842, prs: 3, issues: 2, contributedTo: 2 };
     langs = [
-      { name: "Python", pct: 45.0, color: "#3572A5" },
-      { name: "JavaScript", pct: 26.0, color: "#f1e05a" },
-      { name: "HTML", pct: 17.0, color: "#e34c26" },
-      { name: "TypeScript", pct: 8.0, color: "#3178c6" },
-      { name: "Rust", pct: 3.0, color: "#dea584" },
-      { name: "CSS", pct: 0.8, color: "#663399" },
+      { name: "TypeScript", pct: 57.0, color: "#3178c6" },
+      { name: "Python", pct: 24.0, color: "#3572A5" },
+      { name: "JavaScript", pct: 17.0, color: "#f1e05a" },
+      { name: "Rust", pct: 1.7, color: "#dea584" },
+      { name: "Kotlin", pct: 0.2, color: "#A97BFF" },
+      { name: "Typst", pct: 0.1, color: "#239dad" },
     ];
     streak = {
       total: 1334,
@@ -492,9 +521,11 @@ async function main() {
       longestRange: "Jun 25 - Oct 24",
     };
   } else {
-    stats = parseStatsCard(await get(STATS_URL));
-    langs = parseLangsCard(await get(LANGS_URL));
-    streak = await fetchStreak();
+    [stats, langs, streak] = await Promise.all([
+      fetchStats(),
+      fetchLangs(),
+      fetchStreak(),
+    ]);
   }
   const rowHeight = Math.max(statsCard(stats, themes.dark).H, langsCard(langs, themes.dark).H);
   const cards = [
