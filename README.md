@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/title-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="assets/title-light.svg">
-    <img src="assets/title-light.svg" alt="Hi, I'm Jayadithya - A Curious AI Engineer">
+    <img src="assets/title-light.svg" alt="Hi, I'm Jayadithya - GenAI Engineer: RAG Agents & Inference">
   </picture>
 </div>
 <div>
@@ -62,7 +62,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/tools-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="assets/tools-light.svg">
-    <img src="assets/tools-light.svg" alt="Languages and tools: AWS, Bash, CSS3, Docker, FastAPI, HTML5, Hugging Face, JavaScript, LangChain, Linux, PostgreSQL, Python, PyTorch, React, Rust, Scikit-learn, Selenium, Tailwind, TypeScript">
+    <img src="assets/tools-light.svg" alt="Languages and tools: Rust, Python, PyTorch, LoRA, llama.cpp, Hugging Face, ChromaDB, FastAPI, Docker, Meilisearch, PostgreSQL, SQLite, SQL, uv, Linux, TypeScript, React Native, Expo">
   </picture>
 </div>
 <table>

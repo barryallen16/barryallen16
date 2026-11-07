@@ -257,19 +257,23 @@ function compactStaticAssets() {
   if (!existsSync(titleFile)) return;
   const origTitle = readFileSync(titleFile, "utf8");
 
-  // 1. Hero Title (vbH = 85):
+  // 1. Hero Title (vbH = 90):
   //    - Heading ("Hi, I'm Jayadithya"): y = 0..46
-  //    - 6px gap -> Subtitle ("A Curious AI Engineer"): y = 52..75 (including g descender)
-  //    - 5px gap -> Dotted rule at y = 80..84
+  //    - 6px gap -> Subtitle ("GenAI Engineer: RAG Agents & Inference"): y = 50..70
+  //    - 5px gap -> Dotted rule at y = 77
   const tPaths = [...origTitle.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-  const [handD, hiD, subD] = tPaths;
+  const [handD, hiD] = tPaths;
   const hiB = getBounds(hiD);
-  const subB = getBounds(subD);
   const hiShifted = shiftD(hiD, 0, -hiB.minY);
-  const subShifted = shiftD(subD, 0, 50 - subB.minY);
+  const F = fonts();
+  const subText = "GenAI Engineer: RAG Agents & Inference";
+  const subPix = textPixels(F.regular, subText, 17, 0, 50);
+  const subD = rectsToPath(subPix.rects);
+  const subB = getBounds(subD);
+  const cursorX = subB.maxX + 11;
   for (const [mode, th] of Object.entries(themes)) {
     const vbW = VB_FULL_W, vbH = 90;
-    const svg = `${svgOpen(vbW, vbH, "Hi, I'm Jayadithya. A Curious AI Engineer")}<g transform="translate(0 -5) scale(2)"><path fill="${th.text}" d="${handD}"/></g><path fill="${th.text}" d="${hiShifted}"/><path fill="${th.muted}" d="${subShifted}"/><rect x="285" y="52" width="14" height="19" fill="${th.accent}"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" begin="0.4s" repeatCount="indefinite"/></rect>${dottedRule(77, vbW, th.border)}</svg>`;
+    const svg = `${svgOpen(vbW, vbH, "Hi, I'm Jayadithya. " + subText)}<g transform="translate(0 -5) scale(2)"><path fill="${th.text}" d="${handD}"/></g><path fill="${th.text}" d="${hiShifted}"/><path fill="${th.muted}" d="${subD}"/><rect x="${cursorX}" y="52" width="14" height="19" fill="${th.accent}"><animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.5;0.5;1" dur="1.1s" begin="0.4s" repeatCount="indefinite"/></rect>${dottedRule(77, vbW, th.border)}</svg>`;
     writeFileSync(join(OUT, `title-${mode}.svg`), svg);
   }
 
@@ -330,28 +334,36 @@ function compactStaticAssets() {
   }
 
   // 5. Tool Badges Grid (tools) (vbH = 110):
-  //    8px horizontal gap, 7px vertical gap between rows, and 9px bottom margin
-  //    inside the SVG so the Stats Table sits 15px below the last badge row.
-  const origTools = readFileSync(join(OUT, "tools-dark.svg"), "utf8");
-  const ariaTools = origTools.match(/aria-label="([^"]+)"/)[1];
-  const badgeGroups = [...origTools.matchAll(/<g transform="translate\(\d+ \d+\)"><path fill="[^"]+" d="M2 0h(\d+)v2[^"]+"\/>\s*<path fill="[^"]+" d="([^"]+)"\/><\/g>/g)];
+  //    Prioritized by engineering moat across 3 tiers (6 badges/row) with Gestalt 4px rhythm.
+  const TOOL_TIERS = [
+    ["Rust", "Python", "PyTorch", "LoRA", "llama.cpp", "Hugging Face"],
+    ["ChromaDB", "FastAPI", "Docker", "Meilisearch", "PostgreSQL", "SQLite"],
+    ["SQL", "uv", "Linux", "TypeScript", "React Native", "Expo"],
+  ];
   const padX = 11, gapX = 8, badgeH = 29, gapY = 7;
-  const rows = [[]];
-  let curW = 0;
-  for (const m of badgeGroups) {
-    const rawTxt = m[2];
-    const tB = getBounds(rawTxt);
-    const txtW = Math.round(tB.maxX - tB.minX);
-    const bw = txtW + 2 * padX;
-    const txtShifted = shiftD(rawTxt, padX - tB.minX, 5 - tB.minY);
-    if (curW + (curW > 0 ? gapX : 0) + bw <= VB_FULL_W) {
-      curW += (curW > 0 ? gapX : 0) + bw;
-      rows[rows.length - 1].push([bw, txtShifted]);
-    } else {
-      rows.push([[bw, txtShifted]]);
-      curW = bw;
+  const F_tools = fonts();
+  const rows = [];
+  for (const tier of TOOL_TIERS) {
+    const rowBadges = [];
+    for (const tool of tier) {
+      const p = textPixels(F_tools.medium, tool, 17, 0, 0);
+      let minX = Infinity, minY = Infinity, maxX = -Infinity;
+      for (const r of p.rects) {
+        if (r.x < minX) minX = r.x;
+        if (r.y < minY) minY = r.y;
+        if (r.x + r.w > maxX) maxX = r.x + r.w;
+      }
+      const txtW = Math.round(maxX - minX);
+      const bw = txtW + 2 * padX;
+      const dx = padX - minX;
+      const dy = 5 - minY;
+      const shifted = p.rects.map((r) => ({ x: r.x + dx, y: r.y + dy, w: r.w, h: r.h }));
+      const txtShifted = rectsToPath(shifted);
+      rowBadges.push([bw, txtShifted]);
     }
+    rows.push(rowBadges);
   }
+  const ariaTools = "Languages and tools: " + TOOL_TIERS.flat().join(", ");
   const vbH = 110;
   for (const [mode, th] of Object.entries(themes)) {
     let groupsSvg = "";
