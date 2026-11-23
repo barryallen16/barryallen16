@@ -266,7 +266,7 @@ function compactStaticAssets() {
   const hiB = getBounds(hiD);
   const hiShifted = shiftD(hiD, 0, -hiB.minY);
   const F = fonts();
-  const subText = "GenAI Engineer: RAG Agents & Inference";
+  const subText = "GenAI & Systems Engineer: Tokenizer Infra, Fine-Tuning & Edge ML";
   const subPix = textPixels(F.regular, subText, 17, 0, 50);
   const subD = rectsToPath(subPix.rects);
   const subB = getBounds(subD);
@@ -294,7 +294,7 @@ function compactStaticAssets() {
 
   // 3. Bio/Contact Rows (row-learning, row-email, row-projects, row-resume) (vbH = 25):
   const rowConfigs = [
-    ["row-learning", "Currently learning: Rust and Inference Engineering", false, "text", 705],
+    ["row-learning", "Currently building: Systems Tokenization & Edge Vision Pipelines", false, "text", 810],
     ["row-email", "How to reach me: rjayadithya11@gmail.com", true, "accent", 625],
     ["row-projects", "My projects: jayadithya.is-a.dev", true, "accent", 540],
     ["row-resume", "My experience: jayadithya.is-a.dev/resume", true, "accent", 640],
@@ -302,9 +302,17 @@ function compactStaticAssets() {
   for (const [rname, label, hasUline, valKey, vbW] of rowConfigs) {
     const origR = readFileSync(join(OUT, `${rname}-dark.svg`), "utf8");
     const rp = [...origR.matchAll(/<path fill="[^"]+" d="([^"]+)"\/>/g)].map((m) => m[1]);
-    const dy = 1 - getBounds(rp[1]).minY;
-    const lblShifted = shiftD(rp[1], 0, dy);
-    const valShifted = shiftD(rp[2], 0, dy);
+    let lblShifted, valShifted;
+    if (rname === "row-learning") {
+      const lblPix = textPixels(F.regular, "Currently building:", 17, 43, 1);
+      const valPix = textPixels(F.regular, "Systems Tokenization & Edge Vision Pipelines", 17, 305, 1);
+      lblShifted = rectsToPath(lblPix.rects);
+      valShifted = rectsToPath(valPix.rects);
+    } else {
+      const dy = 1 - getBounds(rp[1]).minY;
+      lblShifted = shiftD(rp[1], 0, dy);
+      valShifted = shiftD(rp[2], 0, dy);
+    }
     const vbH = 25;
     const ulineMatch = origR.match(/<rect x="303" y="[^"]+" width="(\d+)"/);
     const ulineW = hasUline && ulineMatch ? Number(ulineMatch[1]) : 0;

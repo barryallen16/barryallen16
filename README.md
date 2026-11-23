@@ -2,14 +2,14 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/title-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="assets/title-light.svg">
-    <img src="assets/title-light.svg" alt="Hi, I'm Jayadithya - GenAI Engineer: RAG Agents & Inference">
+    <img src="assets/title-light.svg" alt="Hi, I'm Jayadithya - GenAI & Systems Engineer: Tokenizer Infra, Fine-Tuning & Edge ML">
   </picture>
 </div>
 <div>
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/row-learning-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="assets/row-learning-light.svg">
-    <img src="assets/row-learning-light.svg" alt="Currently learning: Rust and Inference Engineering">
+    <img src="assets/row-learning-light.svg" alt="Currently building: Systems Tokenization & Edge Vision Pipelines">
   </picture>
 </div>
 <div>
